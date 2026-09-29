@@ -317,7 +317,7 @@ export function runControls(c, run) {
   const declared = new Set(task.files.map((f) => norm(f.path)));
   const problems = [];
   for (const p of run.report.paths) if (!declared.has(p)) problems.push(`scope: reported path not declared in Files: ${p}`);
-  const status = git(c, ["status", "--porcelain", "--untracked-files=all"]);
+  const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: c.project, encoding: "utf8" });
   const stateRel = rel(c, c.dir) + "/";
   for (const line of status.split("\n").filter(Boolean)) {
     const p = norm(line.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, ""));
@@ -326,7 +326,7 @@ export function runControls(c, run) {
   }
   for (const f of task.files) {
     const abs = path.resolve(c.project, f.path);
-    const existedBefore = existsAtBase(c, run.base, norm(f.path));
+    const existedBefore = existsAtBase(c, "HEAD", norm(f.path)); // HEAD moves with each task commit
     if (f.mode === "create" && existedBefore) problems.push(`files: ${f.path} is marked create but existed at base`);
     if (f.mode === "modify" && !existedBefore) problems.push(`files: ${f.path} is marked modify but did not exist at base`);
     if (run.report.paths.includes(norm(f.path)) && !fs.existsSync(abs)) problems.push(`files: reported path does not exist: ${f.path}`);
