@@ -9,7 +9,8 @@ export const SKILL_FIELDS = ["name", "description", "license", "compatibility", 
 export const SKILL_NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Minimal YAML frontmatter parser: scalars, one level of nested map, and inline lists are enough for our files.
-export function parseFrontmatter(text, file = "<text>") {
+export function parseFrontmatter(input, file = "<text>") {
+  const text = input.replace(/\r\n/g, "\n");
   if (!text.startsWith("---\n")) throw new Error(`${file}: missing frontmatter`);
   const end = text.indexOf("\n---", 4);
   if (end === -1) throw new Error(`${file}: unterminated frontmatter`);

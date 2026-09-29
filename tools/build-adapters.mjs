@@ -6,6 +6,7 @@
 //   --check  generate in memory and exit 1 if any committed file differs (used by CI).
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ROOT, listRoleFiles, readRole, readJSON, walkFiles } from "./lib.mjs";
 
 const GENERATED_DIRS = ["agents", "adapters/codex/agents", "adapters/cursor/agents", "adapters/copilot/agents", "adapters/gemini/agents"];
@@ -78,7 +79,7 @@ export function diffAgainstDisk(files, root = ROOT) {
   const stale = [];
   for (const [rel, content] of Object.entries(files)) {
     const p = path.join(root, rel);
-    if (!fs.existsSync(p) || fs.readFileSync(p, "utf8") !== content) stale.push(rel);
+    if (!fs.existsSync(p) || fs.readFileSync(p, "utf8").replace(/\r\n/g, "\n") !== content) stale.push(rel);
   }
   for (const dir of GENERATED_DIRS) {
     for (const p of walkFiles(path.join(root, dir))) {
@@ -103,7 +104,7 @@ export function writeAll(files, root = ROOT) {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const check = process.argv.includes("--check");
   const files = generateAll();
   if (check) {

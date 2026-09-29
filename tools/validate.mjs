@@ -6,6 +6,7 @@
 // Exit 1 with one line per problem.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ROOT, SKILL_FIELDS, SKILL_NAME_RE, parseFrontmatter, listSkillDirs, listRoleFiles, readRole, readJSON } from "./lib.mjs";
 
 export function validateSkillDir(dir) {
@@ -72,7 +73,7 @@ export function validateAll(root = ROOT) {
   return problems;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const problems = validateAll();
   if (problems.length) {
     console.error(problems.join("\n"));
