@@ -4,7 +4,7 @@ A portable idea-to-merge workflow for coding agents. Spec, freeze, stories, buil
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.1.0.** Installed: the `flow` hub, `flow-adopt`, `flow-spec` with the freeze gate, the four agent roles, conventions, the state file and three hooks (Claude Code, Codex, Cursor). Coming: `flow-stories`, `flow-build`, `flow-review` (v0.2); `flow-design`, `flow-ship`, `flow-retro` (v0.3). Follow the [changelog](CHANGELOG.md).
+> **Status: v0.2.0.** Installed: the `flow` hub with `help`, `status`, `settings`, `next` and `run`; `flow-adopt`; `flow-spec` with the freeze gate; the four agent roles; conventions; the state file; three hooks (Claude Code, Codex, Cursor). Coming: `flow-stories`, `flow-build`, `flow-review` (v0.3); `flow-design`, `flow-ship`, `flow-retro` (v0.4). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
 
 ## Why
 
@@ -41,6 +41,32 @@ irm https://raw.githubusercontent.com/agenticair/flow-state/main/install.ps1 | i
 The installer copies (never symlinks) into user scope by default. It also installs three hooks where the tool supports them: session start hydrates the state file, a guard denies edits to a frozen spec, and a stop check asks for the state file to be updated when commits moved past it. For Codex and Cursor it writes `hooks.json` only if none exists and otherwise prints the entries to merge; for Claude Code the plugin route carries the hooks, and the installer route leaves a snippet to merge into `settings.json`. Scope: `--project` (bash) or `-Project` (PowerShell) installs into the current repository instead. `--uninstall` / `-Uninstall` removes exactly what it added. Node 20+ is optional: without it, skills run but every score and verdict check is labelled `UNVERIFIED`.
 
 Then, in a project, invoke `flow` (`/flow`, `$flow` or `@flow` depending on the tool).
+
+## How to start
+
+1. Install (above) and open your coding tool in a project.
+2. Type `flow` (`/flow` in Claude Code, Cursor and Copilot; `$flow` in Codex). It tells you the tier your tool runs at and that the project is not adopted yet.
+3. Type `flow settings` if you want to change defaults first (autonomy, models, where specs live). It shows the file and writes it after you say yes.
+4. Invoke `flow-adopt`. It reads your repo, proposes `flow.config.json` and a short block for your `AGENTS.md` or `CLAUDE.md`, and writes them after you say yes. Nothing existing is rewritten.
+5. Invoke `flow-spec` with an intent, a ticket, or a brief. It investigates the repo before asking you anything, drafts the spec, scores it, has a fresh reviewer check it, then shows you at most fifteen lines and stops.
+6. Reply `freeze`. Then `flow next` or `flow run` takes you through the rest.
+
+### Commands
+
+| Command | Does |
+|---|---|
+| `flow` / `flow status` | Where the project is, what tier your tool runs at, what comes next |
+| `flow help` | Lists commands and stages available in your tool, and the three gates |
+| `flow settings` | Interactive config; writes `flow.config.json` after you confirm |
+| `flow next` | Runs the next stage in step mode: stops at every checkpoint |
+| `flow run` | Runs the next stage in run mode: stops only at a gate or when stuck |
+| `flow-adopt`, `flow-spec`, … | The stage skills, invocable directly with your tool's skill syntax |
+
+`next` and `run` are the same path at two speeds. `run` never goes below your `autonomy` setting: with `gated` it behaves like `next`.
+
+### What happens when you freeze
+
+The spec file gets `Status: FROZEN` and a date. A hook denies any edit to it from then on; later changes go to `<slug>.changes.md`, one dated entry each, and only you can reopen the gate. The state file records `stage: spec, gate: freeze`. The next stage, stories, turns the spec into a slice table, and the second gate, **go**, is you choosing which story starts. The third gate, **merge**, is you merging the pull request. Nothing in the flow has a permanent external effect except that merge.
 
 ## What you get, per tool
 

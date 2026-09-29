@@ -3,7 +3,7 @@ name: flow-core
 description: Shared runtime for Flow State. Holds the agent role definitions, conventions, templates, deterministic scripts and the config schema that the flow-* stage skills read by relative path. Never invoke this skill directly; it does nothing on its own.
 license: MIT
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   flow-stage: runtime
 ---
 

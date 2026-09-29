@@ -4,6 +4,17 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-29
+
+### Added
+- Hub verbs: `flow help`, `flow status`, `flow settings` (interactive config, written after confirmation), `flow next` (step mode) and `flow run` (run mode, stops only at gates or when stuck; never below the project's `autonomy`).
+- `flow-spec` accepts step and run modes.
+- README: how to start, the command table, and what happens at freeze, go and merge.
+
+### Changed
+- Spec template guidance moved into HTML comments; the scorer ignores comments. `said` tags carry who and date. Citations must be read in the session.
+- Roadmap shifted: stories, build, review in v0.3; design, ship, retro in v0.4.
+
 ## [0.1.0] - 2026-09-29
 
 ### Added
