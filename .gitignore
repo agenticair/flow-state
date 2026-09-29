@@ -5,3 +5,4 @@ flow.config.user.json
 .agent/
 dist/
 tmp/
+.notes/
