@@ -9,5 +9,3 @@ updated: <ISO timestamp>
 ---
 
 ## Notes
-
-Free-form. Newest first. One line per event: date, what changed, why.
