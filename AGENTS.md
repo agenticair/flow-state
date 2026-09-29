@@ -28,9 +28,9 @@ npm run check && npm test
 ```
 skills/           the workflow; each dir is one Agent Skill
 skills/flow-core/ shared runtime: roles, conventions, templates, scripts, config schema
-hooks/            hook logic (Node) and the Claude/Codex hooks.json
+hooks/            hook scripts (Node) + hooks.spec.json (source); hooks.json is generated
 agents/           generated: Claude Code agent files
-adapters/         generated: codex, cursor, copilot, gemini, web
+adapters/         generated: codex, cursor, copilot, gemini agent files and codex/cursor hooks.json
 tools/            maintainer scripts: build-adapters, validate
 install.sh / install.ps1   user installers
 ```

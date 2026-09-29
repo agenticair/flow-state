@@ -9,6 +9,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT, listRoleFiles, readRole, readJSON, walkFiles } from "./lib.mjs";
 
+const HOOKS_SPEC = path.join(ROOT, "hooks", "hooks.spec.json");
+const CURSOR_EVENTS = { SessionStart: "sessionStart", PreToolUse: "preToolUse", Stop: "stop" };
 const GENERATED_DIRS = ["agents", "adapters/codex/agents", "adapters/cursor/agents", "adapters/copilot/agents", "adapters/gemini/agents"];
 
 // Tool-name maps. Claude names are the source vocabulary.
@@ -46,6 +48,26 @@ export function render(role) {
   return out;
 }
 
+export function renderHooks(spec) {
+  const claude = { hooks: {} };
+  const codex = { hooks: {} };
+  const cursor = { version: 1, hooks: {} };
+  for (const h of spec.hooks) {
+    const c = { hooks: [{ type: "command", command: `node "\${CLAUDE_PLUGIN_ROOT}/hooks/${h.script}"`, timeout: h.timeout }] };
+    if (h.matcher) c.matcher = h.matcher;
+    (claude.hooks[h.event] ??= []).push(c);
+    const x = { hooks: [{ type: "command", command: `node "\${FLOW_HOOKS_DIR}/${h.script}" --tool codex`, timeout: h.timeout }] };
+    if (h.matcher) x.matcher = h.matcher;
+    (codex.hooks[h.event] ??= []).push(x);
+    const u = { command: `node "\${FLOW_HOOKS_DIR}/${h.script}" --tool cursor`, timeout: h.timeout };
+    if (h.event === "PreToolUse" && h.matcher) u.matcher = h.matcher;
+    if (h.failClosed) u.failClosed = true;
+    (cursor.hooks[CURSOR_EVENTS[h.event]] ??= []).push(u);
+  }
+  const json = (o) => JSON.stringify(o, null, 2) + "\n";
+  return { "hooks/hooks.json": json(claude), "adapters/codex/hooks.json": json(codex), "adapters/cursor/hooks.json": json(cursor) };
+}
+
 function tomlStr(s) {
   return JSON.stringify(s);
 }
@@ -57,6 +79,7 @@ function uniq(a) {
 export function generateAll(root = ROOT) {
   const files = {};
   for (const file of listRoleFiles(root)) Object.assign(files, render(readRole(file)));
+  Object.assign(files, renderHooks(readJSON(HOOKS_SPEC)));
 
   const version = readJSON(path.join(root, "plugin.json")).version;
   const claude = readJSON(path.join(root, ".claude-plugin/plugin.json"));

@@ -31,6 +31,9 @@ jobs:
           test -f "$RUNNER_TEMP/proj/.agents/skills/flow/SKILL.md"
           test -f "$RUNNER_TEMP/proj/.claude/agents/flow-judge.md"
           test -f "$RUNNER_TEMP/proj/.codex/agents/flow-judge.toml"
+          test -f "$RUNNER_TEMP/proj/.codex/hooks.json" && grep -q "guard-frozen.mjs" "$RUNNER_TEMP/proj/.codex/hooks.json"
+          test -f "$RUNNER_TEMP/proj/.cursor/hooks.json" && grep -q '"version": 1' "$RUNNER_TEMP/proj/.cursor/hooks.json"
+          ! grep -q 'FLOW_HOOKS_DIR' "$RUNNER_TEMP/proj/.codex/hooks.json"
           ./install.sh --project --dest-root "$RUNNER_TEMP/proj" --only claude,codex,cursor,copilot,gemini,universal --yes --uninstall
           test ! -e "$RUNNER_TEMP/proj/.agents/skills/flow"
       - name: Installer smoke (PowerShell)
@@ -42,5 +45,8 @@ jobs:
           if (-not (Test-Path (Join-Path $dest ".agents\skills\flow\SKILL.md"))) { throw "skill missing" }
           if (-not (Test-Path (Join-Path $dest ".claude\agents\flow-judge.md"))) { throw "claude agent missing" }
           if (-not (Test-Path (Join-Path $dest ".codex\agents\flow-judge.toml"))) { throw "codex agent missing" }
+          if (-not (Test-Path (Join-Path $dest ".codex\hooks.json"))) { throw "codex hooks.json missing" }
+          if ((Get-Content (Join-Path $dest ".codex\hooks.json") -Raw) -match 'FLOW_HOOKS_DIR') { throw "placeholder not replaced" }
+          if (-not (Test-Path (Join-Path $dest ".cursor\hooks\flow-state\stop.mjs"))) { throw "cursor hook script missing" }
           ./install.ps1 -Project -DestRoot $dest -Only claude,codex,cursor,copilot,gemini,universal -Yes -Uninstall
           if (Test-Path (Join-Path $dest ".agents\skills\flow")) { throw "uninstall left files" }

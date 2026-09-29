@@ -3,7 +3,7 @@ name: flow
 description: Flow State hub. Use when the user asks what to do next, how to start a feature or ticket, which stage a project is in, or types "flow". Classifies the ask by size and risk, reports which Flow State stages and agent roles are installed in this tool, and names the next stage skill. Read-only. Never starts a stage itself.
 license: MIT
 metadata:
-  version: "0.0.1"
+  version: "0.1.0"
   flow-stage: hub
 ---
 
@@ -49,7 +49,7 @@ If the user gave a ticket URL or key, treat it as the intent and pass it along u
 Name exactly one next skill and why, in two sentences. Then:
 
 - If it is installed: "Open a fresh context and invoke `<skill>` with <the input it needs>."
-- If it is not installed in this version: say which version or phase adds it (see the roadmap in README.md) and offer the nearest thing that exists.
+- If it is not installed in this version: say which version adds it (README roadmap: stories, build, review in v0.2; design, ship, retro in v0.3) and offer the nearest thing that exists. A project with no `.agent/STATE.md` always routes to `flow-adopt` first.
 
 Do not begin the stage here. Do not draft a spec, a story or a plan inside the hub.
 

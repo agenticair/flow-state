@@ -4,7 +4,7 @@ A portable idea-to-merge workflow for coding agents. Spec, freeze, stories, buil
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.0.1, scaffold.** The `flow` hub and the four agent roles are here. The stage skills arrive in this order: `flow-adopt` and `flow-spec` (v0.1), `flow-stories`, `flow-build`, `flow-review` (v0.2), `flow-design`, `flow-ship`, `flow-retro` (v0.3). Follow the [changelog](CHANGELOG.md).
+> **Status: v0.1.0.** Installed: the `flow` hub, `flow-adopt`, `flow-spec` with the freeze gate, the four agent roles, conventions, the state file and three hooks (Claude Code, Codex, Cursor). Coming: `flow-stories`, `flow-build`, `flow-review` (v0.2); `flow-design`, `flow-ship`, `flow-retro` (v0.3). Follow the [changelog](CHANGELOG.md).
 
 ## Why
 
@@ -38,7 +38,7 @@ curl -fsSL https://raw.githubusercontent.com/agenticair/flow-state/main/install.
 irm https://raw.githubusercontent.com/agenticair/flow-state/main/install.ps1 | iex
 ```
 
-The installer copies (never symlinks) into user scope by default; `--project` (bash) or `-Project` (PowerShell) installs into the current repository instead. `--uninstall` / `-Uninstall` removes exactly what it added. Node 20+ is optional: without it, skills run but every score and verdict check is labelled `UNVERIFIED`.
+The installer copies (never symlinks) into user scope by default. It also installs three hooks where the tool supports them: session start hydrates the state file, a guard denies edits to a frozen spec, and a stop check asks for the state file to be updated when commits moved past it. For Codex and Cursor it writes `hooks.json` only if none exists and otherwise prints the entries to merge; for Claude Code the plugin route carries the hooks, and the installer route leaves a snippet to merge into `settings.json`. Scope: `--project` (bash) or `-Project` (PowerShell) installs into the current repository instead. `--uninstall` / `-Uninstall` removes exactly what it added. Node 20+ is optional: without it, skills run but every score and verdict check is labelled `UNVERIFIED`.
 
 Then, in a project, invoke `flow` (`/flow`, `$flow` or `@flow` depending on the tool).
 

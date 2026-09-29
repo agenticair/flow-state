@@ -4,6 +4,19 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-29
+
+### Added
+- `flow-adopt`: one-time project adoption (doc family detection, `flow.config.json`, `.agent/STATE.md`, verified block in `AGENTS.md`/`CLAUDE.md`, lens registration). Never rewrites existing docs.
+- `flow-spec`: intent or ticket to a spec with provenance-tagged decisions, script scoring, a fresh-context review, and the freeze gate (at most fifteen lines, then stop until the human says `freeze`).
+- `flow-core/templates`: spec, STATE, agents-block. `flow-core/conventions`: simplicity, boundaries, testing, ui-states, no-hardcoding, docs-update-law.
+- Scripts: `state.mjs` (init/show/get/set/note) and `spec.mjs` (score/summary/check/freeze/unfreeze), both tested.
+- Hooks: session-start hydration, frozen-spec guard, stop check; wired for Claude Code (plugin), Codex and Cursor from one `hooks.spec.json`.
+- Installers copy hook scripts and write `hooks.json` for Codex and Cursor when absent.
+
+### Changed
+- Hub routes un-adopted projects to `flow-adopt` and names the version that adds each missing stage.
+
 ## [0.0.1] - 2026-09-29
 
 ### Added

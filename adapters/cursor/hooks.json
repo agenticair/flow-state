@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node \"${FLOW_HOOKS_DIR}/session-start.mjs\" --tool cursor",
+        "timeout": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "node \"${FLOW_HOOKS_DIR}/guard-frozen.mjs\" --tool cursor",
+        "timeout": 5,
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "failClosed": true
+      }
+    ],
+    "stop": [
+      {
+        "command": "node \"${FLOW_HOOKS_DIR}/stop.mjs\" --tool cursor",
+        "timeout": 10
+      }
+    ]
+  }
+}

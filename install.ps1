@@ -56,6 +56,11 @@ $D = @{
   cursor_a  = Join-Path $Root ".cursor\agents"
   copilot_a = if ($projectLike) { Join-Path $Root ".github\agents" } else { Join-Path $Root ".copilot\agents" }
   gemini_a  = Join-Path $Root ".gemini\agents"
+  claude_h  = Join-Path $Root ".claude\hooks\flow-state"
+  codex_h   = Join-Path $Root ".codex\hooks\flow-state"
+  cursor_h  = Join-Path $Root ".cursor\hooks\flow-state"
+  codex_hj  = Join-Path $Root ".codex\hooks.json"
+  cursor_hj = Join-Path $Root ".cursor\hooks.json"
 }
 
 # 3. Tools.
@@ -89,6 +94,26 @@ function Copy-Agents($src, $dest) {
     Log "  agent  $(Join-Path $dest $_.Name)"
   }
 }
+function Copy-Hooks($dest) {
+  Run { New-Item -ItemType Directory -Force -Path $dest | Out-Null } "mkdir $dest"
+  Get-ChildItem -Path (Join-Path $Source "hooks") -Filter "*.mjs" | ForEach-Object {
+    Run { Copy-Item -Path $_.FullName -Destination $dest -Force } "copy $($_.Name)"
+  }
+  Log "  hooks  $dest"
+}
+function Write-HooksJson($adapter, $target, $scriptsDir) {
+  if (Test-Path $target) {
+    Log "  note   $target exists; not touched. Merge the entries from $adapter (replace `${FLOW_HOOKS_DIR} with $scriptsDir)."
+  } else {
+    $dirFwd = $scriptsDir.Replace('\', '/')
+    Run { (Get-Content $adapter -Raw).Replace('${FLOW_HOOKS_DIR}', $dirFwd) | Set-Content -Path $target -NoNewline } "write $target"
+    Log "  hooks  $target"
+  }
+}
+function Remove-Hooks($scriptsDir, $target) {
+  if (Test-Path $scriptsDir) { Run { Remove-Item -Recurse -Force $scriptsDir } "rm $scriptsDir"; Log "  removed $scriptsDir" }
+  if ($target -and (Test-Path $target) -and ((Get-Content $target -Raw) -match "flow-state")) { Log "  note   $target still references flow-state; remove those entries by hand." }
+}
 function Remove-Skills($dest) {
   Get-ChildItem -Path (Join-Path $Source "skills") -Directory | ForEach-Object {
     $t = Join-Path $dest $_.Name
@@ -106,9 +131,17 @@ function Remove-Agents($src, $dest) {
 foreach ($t in $Tools) {
   switch ($t) {
     "universal" { if ($Uninstall) { Remove-Skills $D.universal } else { Copy-Skills $D.universal } }
-    "claude"    { if ($Uninstall) { Remove-Skills $D.claude_s; Remove-Agents (Join-Path $Source "agents") $D.claude_a } else { Copy-Skills $D.claude_s; Copy-Agents (Join-Path $Source "agents") $D.claude_a } }
-    "codex"     { $s = Join-Path $Source "adapters\codex\agents";   if ($Uninstall) { Remove-Agents $s $D.codex_a }   else { Copy-Agents $s $D.codex_a } }
-    "cursor"    { $s = Join-Path $Source "adapters\cursor\agents";  if ($Uninstall) { Remove-Agents $s $D.cursor_a }  else { Copy-Agents $s $D.cursor_a } }
+    "claude"    {
+      if ($Uninstall) { Remove-Skills $D.claude_s; Remove-Agents (Join-Path $Source "agents") $D.claude_a; Remove-Hooks $D.claude_h $null }
+      else {
+        Copy-Skills $D.claude_s; Copy-Agents (Join-Path $Source "agents") $D.claude_a; Copy-Hooks $D.claude_h
+        $snip = Join-Path $D.claude_h "settings-snippet.json"
+        Run { (Get-Content (Join-Path $Source "hooks\hooks.json") -Raw).Replace('${CLAUDE_PLUGIN_ROOT}/hooks', $D.claude_h.Replace('\', '/')) | Set-Content -Path $snip -NoNewline } "write $snip"
+        Log "  note   Claude Code: if installed as a plugin, hooks are already active. Otherwise merge $snip into your settings.json."
+      }
+    }
+    "codex"     { $s = Join-Path $Source "adapters\codex\agents";  if ($Uninstall) { Remove-Agents $s $D.codex_a; Remove-Hooks $D.codex_h $D.codex_hj }   else { Copy-Agents $s $D.codex_a; Copy-Hooks $D.codex_h; Write-HooksJson (Join-Path $Source "adapters\codex\hooks.json") $D.codex_hj $D.codex_h } }
+    "cursor"    { $s = Join-Path $Source "adapters\cursor\agents"; if ($Uninstall) { Remove-Agents $s $D.cursor_a; Remove-Hooks $D.cursor_h $D.cursor_hj } else { Copy-Agents $s $D.cursor_a; Copy-Hooks $D.cursor_h; Write-HooksJson (Join-Path $Source "adapters\cursor\hooks.json") $D.cursor_hj $D.cursor_h } }
     "copilot"   { $s = Join-Path $Source "adapters\copilot\agents"; if ($Uninstall) { Remove-Agents $s $D.copilot_a } else { Copy-Agents $s $D.copilot_a } }
     "gemini"    { $s = Join-Path $Source "adapters\gemini\agents";  if ($Uninstall) { Remove-Agents $s $D.gemini_a }  else { Copy-Agents $s $D.gemini_a } }
     default     { throw "unknown tool: $t" }

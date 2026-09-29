@@ -60,9 +60,13 @@ if [ -n "$DEST_ROOT" ]; then ROOT="$DEST_ROOT"; elif [ "$SCOPE" = "project" ]; t
 if [ "$SCOPE" = "project" ] || [ -n "$DEST_ROOT" ]; then
   d_universal="$ROOT/.agents/skills";  d_claude_s="$ROOT/.claude/skills"; d_claude_a="$ROOT/.claude/agents"
   d_codex_a="$ROOT/.codex/agents";     d_cursor_a="$ROOT/.cursor/agents"; d_copilot_a="$ROOT/.github/agents"; d_gemini_a="$ROOT/.gemini/agents"
+  d_claude_h="$ROOT/.claude/hooks/flow-state"; d_codex_h="$ROOT/.codex/hooks/flow-state"; d_cursor_h="$ROOT/.cursor/hooks/flow-state"
+  f_codex_hooks="$ROOT/.codex/hooks.json"; f_cursor_hooks="$ROOT/.cursor/hooks.json"
 else
   d_universal="$ROOT/.agents/skills";  d_claude_s="$ROOT/.claude/skills"; d_claude_a="$ROOT/.claude/agents"
   d_codex_a="$ROOT/.codex/agents";     d_cursor_a="$ROOT/.cursor/agents"; d_copilot_a="$ROOT/.copilot/agents"; d_gemini_a="$ROOT/.gemini/agents"
+  d_claude_h="$ROOT/.claude/hooks/flow-state"; d_codex_h="$ROOT/.codex/hooks/flow-state"; d_cursor_h="$ROOT/.cursor/hooks/flow-state"
+  f_codex_hooks="$ROOT/.codex/hooks.json"; f_cursor_hooks="$ROOT/.cursor/hooks.json"
 fi
 
 # 3. Detect tools (user scope) or take --only.
@@ -96,15 +100,38 @@ copy_agents() { # $1 = src dir, $2 = dest dir
   run mkdir -p "$2"
   for f in "$1"/*; do [ -f "$f" ] || continue; run cp "$f" "$2/"; log "  agent  $2/$(basename "$f")"; done
 }
+copy_hooks() { # $1 = dest dir for scripts
+  run mkdir -p "$1"
+  for f in "$SOURCE"/hooks/*.mjs; do run cp "$f" "$1/"; done
+  log "  hooks  $1"
+}
+write_hooks_json() { # $1 = adapter file, $2 = target hooks.json, $3 = scripts dir
+  if [ -f "$2" ]; then
+    log "  note   $2 exists; not touched. Merge the entries from $1 (replace \${FLOW_HOOKS_DIR} with $3)."
+  else
+    if [ "$DRY" = 1 ]; then log "  dry-run: write $2"; else sed "s|\${FLOW_HOOKS_DIR}|$3|g" "$1" > "$2"; fi
+    log "  hooks  $2"
+  fi
+}
+remove_hooks() { # $1 = scripts dir, $2 = hooks.json
+  [ -d "$1" ] && { run rm -rf "$1"; log "  removed $1"; }
+  [ -f "$2" ] && grep -q "flow-state" "$2" && log "  note   $2 still references flow-state; remove those entries by hand."
+  return 0
+}
 remove_skills() { for s in "$SOURCE"/skills/*/; do n="$(basename "$s")"; [ -e "$1/$n" ] && { run rm -rf "$1/$n"; log "  removed $1/$n"; }; done; return 0; }
 remove_agents() { for f in "$1"/*; do [ -f "$f" ] || continue; t="$2/$(basename "$f")"; [ -e "$t" ] && { run rm -f "$t"; log "  removed $t"; }; done; return 0; }
 
 for t in $tools; do
   case "$t" in
     universal) if [ "$UNINSTALL" = 1 ]; then remove_skills "$d_universal"; else copy_skills "$d_universal"; fi ;;
-    claude)    if [ "$UNINSTALL" = 1 ]; then remove_skills "$d_claude_s"; remove_agents "$SOURCE/agents" "$d_claude_a"; else copy_skills "$d_claude_s"; copy_agents "$SOURCE/agents" "$d_claude_a"; fi ;;
-    codex)     if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/codex/agents" "$d_codex_a"; else copy_agents "$SOURCE/adapters/codex/agents" "$d_codex_a"; fi ;;
-    cursor)    if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/cursor/agents" "$d_cursor_a"; else copy_agents "$SOURCE/adapters/cursor/agents" "$d_cursor_a"; fi ;;
+    claude)    if [ "$UNINSTALL" = 1 ]; then remove_skills "$d_claude_s"; remove_agents "$SOURCE/agents" "$d_claude_a"; remove_hooks "$d_claude_h" ""; else
+                 copy_skills "$d_claude_s"; copy_agents "$SOURCE/agents" "$d_claude_a"; copy_hooks "$d_claude_h"
+                 if [ "$DRY" != 1 ]; then sed "s|\${CLAUDE_PLUGIN_ROOT}/hooks|$d_claude_h|g" "$SOURCE/hooks/hooks.json" > "$d_claude_h/settings-snippet.json"; fi
+                 log "  note   Claude Code: if installed as a plugin, hooks are already active. Otherwise merge $d_claude_h/settings-snippet.json into your settings.json." ; fi ;;
+    codex)     if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/codex/agents" "$d_codex_a"; remove_hooks "$d_codex_h" "$f_codex_hooks"; else
+                 copy_agents "$SOURCE/adapters/codex/agents" "$d_codex_a"; copy_hooks "$d_codex_h"; write_hooks_json "$SOURCE/adapters/codex/hooks.json" "$f_codex_hooks" "$d_codex_h"; fi ;;
+    cursor)    if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/cursor/agents" "$d_cursor_a"; remove_hooks "$d_cursor_h" "$f_cursor_hooks"; else
+                 copy_agents "$SOURCE/adapters/cursor/agents" "$d_cursor_a"; copy_hooks "$d_cursor_h"; write_hooks_json "$SOURCE/adapters/cursor/hooks.json" "$f_cursor_hooks" "$d_cursor_h"; fi ;;
     copilot)   if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/copilot/agents" "$d_copilot_a"; else copy_agents "$SOURCE/adapters/copilot/agents" "$d_copilot_a"; fi ;;
     gemini)    if [ "$UNINSTALL" = 1 ]; then remove_agents "$SOURCE/adapters/gemini/agents" "$d_gemini_a"; else copy_agents "$SOURCE/adapters/gemini/agents" "$d_gemini_a"; fi ;;
     *) echo "unknown tool: $t" >&2; exit 2 ;;
