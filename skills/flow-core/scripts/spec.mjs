@@ -43,7 +43,7 @@ export function parseSpec(input) {
   const parked = tableRows(sections["parked"] || "");
   const context = (sections["context for the builder"] || "")
     .split("\n")
-    .filter((l) => l.trim() && !/^Only bullets/.test(l.trim()));
+    .filter((l) => l.trim() && !/^<!--/.test(l.trim()));
   return {
     header,
     bet: field("Bet"),

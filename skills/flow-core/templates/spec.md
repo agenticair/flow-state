@@ -13,7 +13,7 @@ Ticket: <url, key, or none>
 
 ## Frozen decisions
 
-Every row carries a provenance tag. `said` needs the human's words. `deduced` names its source. `proposed` is not allowed here; park it below.
+<!-- Every row carries a provenance tag. `said: "quote" (who, date)`; `deduced: from <source>`; `proposed` is not allowed here, park it below. -->
 
 | # | Decision | Provenance |
 |---|---|---|
@@ -22,14 +22,14 @@ Every row carries a provenance tag. `said` needs the human's words. `deduced` na
 
 ## Context for the builder
 
-Only bullets, **bold**, and closed code fences. This section and the slice rows are all a builder ever sees.
+<!-- Only bullets, **bold**, and closed code fences. This section and the slice rows are all a builder ever sees. -->
 
 - <fact a builder needs, with `path:line` when it comes from the repo>
 - <constraint>
 
 ## Parked
 
-Open questions and proposals. Nothing here is frozen.
+<!-- Open questions and proposals. Nothing here is frozen. -->
 
 | # | Question or proposal | Options seen | Owner |
 |---|---|---|---|
@@ -37,7 +37,7 @@ Open questions and proposals. Nothing here is frozen.
 
 ## Slices
 
-Filled by `flow-stories`. Empty at freeze.
+<!-- Filled by `flow-stories`. Empty at freeze. -->
 
 | # | Slice | Type | Delivers | Dep | Accepts | Protected | Area | Gate | Signal |
 |---|---|---|---|---|---|---|---|---|---|

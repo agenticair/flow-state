@@ -32,10 +32,12 @@ Before any question to the human, establish from the repository what exists and 
 Copy `<core>/templates/spec.md` to `<specs.dir>/<YYYY-MM-DD>-<slug>.md` and fill it. Rules that are not negotiable:
 
 - **Hypothesis** needs three lines: the bet, how we would know it failed, the anti-scope. If the failure signal is unknown, write `[⚠️ Pending: define with <who>]`, not a plausible metric.
-- **Every frozen decision carries a provenance tag.** `said: "<quote>"` only when the words are the human's, from this conversation or the ticket. `deduced: <from what>` when it follows from a said decision or from a cited file. Anything you thought of yourself is `proposed` and goes under **Parked**, never in the frozen table.
+- **Every frozen decision carries a provenance tag.** `said: "<quote>" (<who>, <date>)` only when the words are the human's, from this conversation or the ticket. `deduced: <from what>` when it follows from a said decision or from a cited file. Anything you thought of yourself is `proposed` and goes under **Parked**, never in the frozen table.
 - **Numbers** carry a source and a date or are placeholders.
 - **Context for the builder** holds only bullets, bold and closed code fences. It is, with the slice rows, the only part of this file a builder ever sees. A requirement written anywhere else is invisible to the build.
 - Gaps you cannot close from the repository are `[NEEDS CLARIFICATION: <question>]` inline.
+- Every `path:line` you cite was read in this session at that line. A citation from memory is a defect the reviewer will find.
+- The template's `<!-- -->` guidance comments are deleted as you fill each section.
 
 ## 4. Ask only what the repository could not settle
 
