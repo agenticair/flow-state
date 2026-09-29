@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flow State"
+  short_description: "Orient: which stage, which tier, what next"
+  default_prompt: "Use $flow to tell me where this project is in the flow and what to do next."

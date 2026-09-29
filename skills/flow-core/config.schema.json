@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/agenticair/flow-state/skills/flow-core/config.schema.json",
+  "title": "Flow State project configuration",
+  "description": "flow.config.json at the project root, merged with a git-ignored flow.config.user.json. Scalars override; arrays of objects with a `name` merge by name; other arrays append.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "autonomy": {
+      "type": "string",
+      "enum": ["gated", "assisted", "auto"],
+      "default": "gated",
+      "description": "gated: stop at every checkpoint. assisted: stop only at the three gates (freeze, go, merge). auto: build runs unattended and halts with a reason instead of asking; freeze and merge remain human."
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "builder": { "type": "string", "default": "sonnet" },
+        "judge": { "type": "string", "default": "opus" }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "type": "string",
+          "enum": ["flat", "numbered", "custom"],
+          "description": "flat: capitalised root files (README, CHANGELOG, DECISIONS, TECH_SPEC). numbered: docs/01_USER_SPEC.md style. custom: use docs.map."
+        },
+        "map": {
+          "type": "object",
+          "description": "Role to path, e.g. {\"changelog\": \"docs/03_CHANGELOG.md\", \"decisions\": \"docs/06_DECISIONS.md\"}.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "specs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": { "type": "string", "default": "docs/specs" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": { "type": "string", "default": ".agent" }
+      }
+    },
+    "lenses": {
+      "type": "array",
+      "description": "Project review lenses the review stage may invoke by trigger.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "triggers": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "ticket": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string", "enum": ["github", "linear", "jira", "none"], "default": "none" }
+      }
+    },
+    "retro": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apply": { "type": "string", "enum": ["propose", "pr", "auto"], "default": "propose" }
+      }
+    },
+    "language": { "type": "string", "default": "en" }
+  }
+}

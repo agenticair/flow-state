@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "flow-state",
+  "version": "0.0.1",
+  "description": "A portable idea-to-merge workflow for coding agents: spec, freeze, stories, build, judge, ship, retro. The human decides three times; a program checks the rest.",
+  "author": {
+    "name": "AgenticAir",
+    "url": "https://github.com/agenticair"
+  },
+  "homepage": "https://github.com/agenticair/flow-state",
+  "repository": "https://github.com/agenticair/flow-state",
+  "license": "MIT",
+  "keywords": ["workflow", "spec", "code-review", "agent-skills", "sdlc"],
+  "skills": "./skills/"
+}

@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate skills, roles and manifests
+        run: npm run validate
+      - name: Generated adapters are up to date
+        run: node tools/build-adapters.mjs --check
+      - name: Tests
+        run: npm test
+      - name: Installer smoke (bash)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          ./install.sh --project --dest-root "$RUNNER_TEMP/proj" --only claude,codex,cursor,copilot,gemini,universal --yes
+          test -f "$RUNNER_TEMP/proj/.agents/skills/flow/SKILL.md"
+          test -f "$RUNNER_TEMP/proj/.claude/agents/flow-judge.md"
+          test -f "$RUNNER_TEMP/proj/.codex/agents/flow-judge.toml"
+          ./install.sh --project --dest-root "$RUNNER_TEMP/proj" --only claude,codex,cursor,copilot,gemini,universal --yes --uninstall
+          test ! -e "$RUNNER_TEMP/proj/.agents/skills/flow"
+      - name: Installer smoke (PowerShell)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP "proj"
+          ./install.ps1 -Project -DestRoot $dest -Only claude,codex,cursor,copilot,gemini,universal -Yes
+          if (-not (Test-Path (Join-Path $dest ".agents\skills\flow\SKILL.md"))) { throw "skill missing" }
+          if (-not (Test-Path (Join-Path $dest ".claude\agents\flow-judge.md"))) { throw "claude agent missing" }
+          if (-not (Test-Path (Join-Path $dest ".codex\agents\flow-judge.toml"))) { throw "codex agent missing" }
+          ./install.ps1 -Project -DestRoot $dest -Only claude,codex,cursor,copilot,gemini,universal -Yes -Uninstall
+          if (Test-Path (Join-Path $dest ".agents\skills\flow")) { throw "uninstall left files" }

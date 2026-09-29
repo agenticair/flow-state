@@ -1,0 +1,32 @@
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tag matches plugin.json version
+        run: |
+          v="$(node -p "require('./plugin.json').version")"
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != plugin.json v$v"; exit 1; }
+      - run: npm run check && npm test
+      - name: Package web bundle if present
+        run: |
+          if [ -d adapters/web ]; then (cd adapters && zip -r ../flow-state-web-bundle.zip web); fi
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=(--generate-notes)
+          [ -f flow-state-web-bundle.zip ] && args+=(flow-state-web-bundle.zip)
+          gh release create "${GITHUB_REF_NAME}" "${args[@]}"
