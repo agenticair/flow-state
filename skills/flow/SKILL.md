@@ -3,7 +3,7 @@ name: flow
 description: Flow State hub. Use when the user types "flow" with or without a verb (help, status, settings, next, run), asks what to do next, how to start a feature or ticket, or which stage a project is in. Orients, sizes the ask, and dispatches to the right stage skill. Writes nothing except flow.config.json through "flow settings", and only after the user confirms.
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   flow-stage: hub
 ---
 
@@ -50,7 +50,7 @@ If `.agent/STATE.md` exists, read it. The stage on disk beats anything remembere
 
 Unclear requirements, architectural reach, or anything touching auth, billing, data or deployment pushes work up one tier. A ticket URL or key is passed to the stage unchanged.
 
-For `flow` and `flow status`: name exactly one next skill and why, then invite the user to invoke it (or to type `flow next`). If the skill is not installed in this version, say which version adds it (stories, build, review in v0.3; design, ship, retro in v0.4) and offer the nearest thing that exists.
+For `flow` and `flow status`: name exactly one next skill and why, then invite the user to invoke it (or to type `flow next`). If the skill is not installed in this version, say which version adds it (design, ship, retro in v0.4) and offer the nearest thing that exists.
 
 For `flow next` and `flow run`: invoke that stage skill now, passing the mode (`step` or `run`), the state, and the input it needs. Nothing else.
 

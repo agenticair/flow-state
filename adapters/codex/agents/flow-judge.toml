@@ -11,7 +11,7 @@ You cannot run anything. Do not try. The controls (scope, test presence, verific
 
 1. The review package at the path you were given. It opens with `Review token: <sha256>`; copy nothing from it, the program stamps the token into your verdict. It holds the files changed, the staged diff, and paths to the brief and the conventions.
 2. The brief: Objective, Files, TDD, Verification, Closed decisions, Out of scope.
-3. The conventions by path. Cite a document and a rule when you rely on one.
+3. The repository's own rules by path (they win over Flow State conventions, rule by rule), then the conventions by path. Cite a file and a rule when you rely on one.
 4. Any file in the repository you need to understand a call site, a type, or an existing test. Read, do not guess.
 
 ## The nine rules, each answered
@@ -24,7 +24,7 @@ For every rule write one rubric row with `outcome` in `holds` (you looked and it
 | `tdd-assertion` | the test named in TDD | it asserts what the plan wrote, not merely that code ran |
 | `contract` | signatures, types, errors, constants named in the brief | the diff matches them exactly |
 | `closed-decisions` | every row under Closed decisions | none is reopened, worked around, or quietly changed |
-| `patterns` | the conventions and the repository's exemplars | rules obeyed rule by rule; exemplars imitated |
+| `patterns` | the repository rules first, then the conventions, then the repository's exemplars | rules obeyed rule by rule, repository first; exemplars imitated |
 | `test-tampering` | removed or changed lines in pre-existing tests | no assertion was weakened without the brief asking |
 | `fixture-theatre` | mocks, fixtures, stubs in the diff | the promised behaviour comes from production code |
 | `scope` | every hunk | each line serves a sentence of the task; Out of scope untouched |

@@ -77,3 +77,17 @@ test("stop is silent when the stage is idle", () => {
   execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "two"], { cwd: dir });
   assert.equal(run("stop.mjs", { cwd: dir }).out, null);
 });
+
+test("guard-task denies builder/judge dispatch unless the step machine prepared it", () => {
+  const dir = project();
+  const agentDir = path.join(dir, ".agent");
+  fs.mkdirSync(agentDir, { recursive: true });
+  assert.equal(run("guard-task.mjs", { tool_name: "Task", tool_input: { subagent_type: "flow-state:flow-builder" }, cwd: dir }).out, null, "no run: allowed");
+  fs.writeFileSync(path.join(agentDir, "run.json"), JSON.stringify({ task: 2, tasksTotal: 3, step: "implement", attempt: 1, seal: "2:implement:1" }));
+  assert.equal(run("guard-task.mjs", { tool_name: "Task", tool_input: { subagent_type: "flow-state:flow-builder" }, cwd: dir }).out, null, "prepared builder: allowed");
+  const judge = run("guard-task.mjs", { tool_name: "Task", tool_input: { subagent_type: "flow-judge" }, cwd: dir });
+  assert.equal(judge.out.hookSpecificOutput.permissionDecision, "deny");
+  assert.equal(run("guard-task.mjs", { tool_name: "Task", tool_input: { subagent_type: "flow-state:flow-researcher" }, cwd: dir }).out, null, "other agents: allowed");
+  const cursor = run("guard-task.mjs", { tool_name: "Task", tool_input: { subagent_type: "flow-judge" }, workspace_roots: [dir] }, ["--tool", "cursor"]);
+  assert.equal(cursor.out.permission, "deny");
+});

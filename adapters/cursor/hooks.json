@@ -13,6 +13,12 @@
         "timeout": 5,
         "matcher": "Write|Edit|MultiEdit|NotebookEdit",
         "failClosed": true
+      },
+      {
+        "command": "node \"${FLOW_HOOKS_DIR}/guard-task.mjs\" --tool cursor",
+        "timeout": 5,
+        "matcher": "Task|Agent",
+        "failClosed": true
       }
     ],
     "stop": [

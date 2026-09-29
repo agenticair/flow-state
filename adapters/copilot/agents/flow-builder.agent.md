@@ -22,7 +22,7 @@ You implement one task. You are not the judge of it and you do not commit it. Yo
 
 ## Conventions
 
-The brief pastes the conventions that apply. They win over repository habits rule by rule, unless a linter that runs in Verification says otherwise; then the linter wins and you say so in the report.
+The brief pastes the repository's own rules first and Flow State's conventions after them. Repository rules win, rule by rule; conventions apply where the repository is silent; a linter that runs in Verification wins over both, and you say so in the report when it does.
 
 ## Report
 

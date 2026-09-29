@@ -8,7 +8,11 @@
   "properties": {
     "autonomy": {
       "type": "string",
-      "enum": ["gated", "assisted", "auto"],
+      "enum": [
+        "gated",
+        "assisted",
+        "auto"
+      ],
       "default": "gated",
       "description": "gated: stop at every checkpoint. assisted: stop only at the three gates (freeze, go, merge). auto: build runs unattended and halts with a reason instead of asking; freeze and merge remain human."
     },
@@ -16,8 +20,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "builder": { "type": "string", "default": "sonnet" },
-        "judge": { "type": "string", "default": "opus" }
+        "builder": {
+          "type": "string",
+          "default": "sonnet"
+        },
+        "judge": {
+          "type": "string",
+          "default": "opus"
+        }
       }
     },
     "docs": {
@@ -26,13 +36,19 @@
       "properties": {
         "family": {
           "type": "string",
-          "enum": ["flat", "numbered", "custom"],
+          "enum": [
+            "flat",
+            "numbered",
+            "custom"
+          ],
           "description": "flat: capitalised root files (README, CHANGELOG, DECISIONS, TECH_SPEC). numbered: docs/01_USER_SPEC.md style. custom: use docs.map."
         },
         "map": {
           "type": "object",
           "description": "Role to path, e.g. {\"changelog\": \"docs/03_CHANGELOG.md\", \"decisions\": \"docs/06_DECISIONS.md\"}.",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -40,14 +56,20 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "dir": { "type": "string", "default": "docs/specs" }
+        "dir": {
+          "type": "string",
+          "default": "docs/specs"
+        }
       }
     },
     "state": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "dir": { "type": "string", "default": ".agent" }
+        "dir": {
+          "type": "string",
+          "default": ".agent"
+        }
       }
     },
     "lenses": {
@@ -56,11 +78,23 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "path"],
+        "required": [
+          "name",
+          "path"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "path": { "type": "string" },
-          "triggers": { "type": "array", "items": { "type": "string" } }
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -68,16 +102,61 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "source": { "type": "string", "enum": ["github", "linear", "jira", "none"], "default": "none" }
+        "source": {
+          "type": "string",
+          "enum": [
+            "github",
+            "linear",
+            "jira",
+            "none"
+          ],
+          "default": "none"
+        }
       }
     },
     "retro": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "apply": { "type": "string", "enum": ["propose", "pr", "auto"], "default": "propose" }
+        "apply": {
+          "type": "string",
+          "enum": [
+            "propose",
+            "pr",
+            "auto"
+          ],
+          "default": "propose"
+        }
       }
     },
-    "language": { "type": "string", "default": "en" }
+    "language": {
+      "type": "string",
+      "default": "en"
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Repository rule files pasted into every brief and package. Defaults: AGENTS.md, CLAUDE.md (+imports), .claude/rules, .cursor/rules, Copilot instructions, GEMINI.md, CONTRIBUTING.md.",
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra rule files, paths relative to the project root."
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Default sources to leave out."
+        },
+        "maxBytes": {
+          "type": "string",
+          "description": "Budget for pasted rules, as a string number. Default 32768."
+        }
+      }
+    }
   }
 }

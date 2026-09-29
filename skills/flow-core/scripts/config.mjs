@@ -21,6 +21,7 @@ export const DEFAULTS = Object.freeze({
   lenses: [],
   ticket: { source: "none" },
   retro: { apply: "propose" },
+  rules: { include: [], exclude: [], maxBytes: "32768" },
   language: "en",
 });
 

@@ -37,7 +37,4 @@ Ticket: <url, key, or none>
 
 ## Slices
 
-<!-- Filled by `flow-stories`. Empty at freeze. -->
-
-| # | Slice | Type | Delivers | Dep | Accepts | Protected | Area | Gate | Signal |
-|---|---|---|---|---|---|---|---|---|---|
+<!-- Written by `flow-stories` after the freeze, in `<this file without .md>.stories.md` and one story file per row under `<this file without .md>/stories/`. This frozen file never changes. -->

@@ -4,6 +4,21 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-29
+
+### Added
+- `flow-stories`: frozen spec to slice table and story files, scored (`score_story.mjs`, `redflags.mjs`), split, ordered anti-waterfall, reviewed fresh, ending at the go gate.
+- `flow-build`: plan with declared Files/TDD/Verification, then the loop driven by `step.mjs`: builder dispatch on a generated brief, controls (scope, TDD presence, verification predicates), review package with a sha256 token and a sealed tree, judge dispatch, `verdict.mjs` schema validation, commit of exactly the sealed tree with the verdict beside the code. Retry budgets and blocked states. Verdicts discarded on schema or hash mismatch.
+- `flow-review`: judge plus the host's native review (Claude `/code-review` and `/security-review`, Codex `review-agent`, Cursor `review`/`review-security`, Copilot review) plus project lenses; grading and routing (patch task, defer, spec gap).
+- `rules.mjs`: the repository's own rule files (AGENTS.md, CLAUDE.md and imports, .claude/rules, .cursor/rules, Copilot instructions, GEMINI.md, CONTRIBUTING.md, plus `rules.include`) pasted into every brief and package above Flow State conventions. Repository rules win.
+- Hook `guard-task`: denies dispatching flow-builder or flow-judge unless the step machine prepared that exact step.
+- Templates: stories, story, plan. Config: `rules.include`, `rules.exclude`, `rules.maxBytes`.
+- Integration test of a two-task run, including a scope violation and a tampered index.
+
+### Changed
+- Spec template: slices live in `<spec>.stories.md` and `<spec>/stories/`, so the frozen file never changes.
+- Judge and builder roles state the precedence: repository rules, then conventions, then a linter in Verification wins over both.
+
 ## [0.2.0] - 2026-09-29
 
 ### Added

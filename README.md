@@ -4,7 +4,7 @@ A portable idea-to-merge workflow for coding agents. Spec, freeze, stories, buil
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.2.0.** Installed: the `flow` hub with `help`, `status`, `settings`, `next` and `run`; `flow-adopt`; `flow-spec` with the freeze gate; the four agent roles; conventions; the state file; three hooks (Claude Code, Codex, Cursor). Coming: `flow-stories`, `flow-build`, `flow-review` (v0.3); `flow-design`, `flow-ship`, `flow-retro` (v0.4). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
+> **Status: v0.3.0.** Installed: the `flow` hub with `help`, `status`, `settings`, `next` and `run`; `flow-adopt`; `flow-spec` with the freeze gate; `flow-stories` with the go gate; `flow-build` (the builder/judge loop driven by a step machine); `flow-review`; the four agent roles; conventions; repository-rules collection; the state file; four hooks (Claude Code, Codex, Cursor). Coming: `flow-design`, `flow-ship`, `flow-retro` (v0.4). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
 
 ## Why
 
@@ -14,6 +14,7 @@ Coding agents are good at implementation and bad at three things around it: turn
 - **A builder that cannot certify and a judge that cannot run.** The builder writes code and tests. The judge has no shell, reads the exact diff by hash, and returns a verdict a script validates. Whoever writes cannot approve; whoever approves cannot run.
 - **State in files, not in the conversation.** A new chat, a compaction or a new machine resumes from `.agent/STATE.md`.
 - **Never invent.** A missing metric is `[⚠️ Pending: define with <who>]`, routed to a person, never a plausible number.
+- **Your repository's rules win.** `AGENTS.md`, `CLAUDE.md` and its imports, `.claude/rules`, `.cursor/rules`, Copilot instructions, `GEMINI.md` and `CONTRIBUTING.md` are collected and pasted into every builder brief and judge package above Flow State's own conventions. A company that installs this gets its own house rules enforced, rule by rule.
 - **A retro that proposes diffs.** After a merge, evidence in, small reviewed changes to your conventions out.
 
 The design is distilled from three public systems that run in production: Mercadona Tech's [user story toolkit](https://github.com/josemerca/mercadona-user-story-toolkit) and [Control Tower](https://github.com/josemerca/control-tower-plugin), and the [BMad Method](https://github.com/bmad-code-org/BMAD-METHOD). Where a file was portable, it was borrowed with attribution.
@@ -49,7 +50,7 @@ Then, in a project, invoke `flow` (`/flow`, `$flow` or `@flow` depending on the 
 3. Type `flow settings` if you want to change defaults first (autonomy, models, where specs live). It shows the file and writes it after you say yes.
 4. Invoke `flow-adopt`. It reads your repo, proposes `flow.config.json` and a short block for your `AGENTS.md` or `CLAUDE.md`, and writes them after you say yes. Nothing existing is rewritten.
 5. Invoke `flow-spec` with an intent, a ticket, or a brief. It investigates the repo before asking you anything, drafts the spec, scores it, has a fresh reviewer check it, then shows you at most fifteen lines and stops.
-6. Reply `freeze`. Then `flow next` or `flow run` takes you through the rest.
+6. Reply `freeze`. Then `flow next` or `flow run` takes you through stories (you name the story that starts: the **go** gate), build (a builder agent writes, a judge agent with no shell judges, a program checks and commits each task), and review.
 
 ### Commands
 

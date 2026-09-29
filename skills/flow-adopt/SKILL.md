@@ -3,7 +3,7 @@ name: flow-adopt
 description: Adopts a project into Flow State, once. Use when the flow hub says a project has no state file, or the user asks to set up, adopt, or onboard a repository for Flow State. Detects the doc family, writes flow.config.json and .agent/STATE.md, adds a verified block to AGENTS.md or CLAUDE.md, and registers existing review lenses. Never rewrites existing documentation.
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   flow-stage: adopt
 ---
 

@@ -22,6 +22,16 @@
           }
         ],
         "matcher": "Write|Edit|MultiEdit|NotebookEdit"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${FLOW_HOOKS_DIR}/guard-task.mjs\" --tool codex",
+            "timeout": 5
+          }
+        ],
+        "matcher": "Task|Agent"
       }
     ],
     "Stop": [

@@ -1,8 +1,30 @@
 {
   "description": "Source of truth for hook wiring. tools/build-adapters.mjs renders hooks/hooks.json (Claude Code plugin, also valid for Codex) and adapters/{codex,cursor}/hooks.json from this list.",
   "hooks": [
-    { "event": "SessionStart", "script": "session-start.mjs", "matcher": "startup|resume|clear|compact", "timeout": 10 },
-    { "event": "PreToolUse", "script": "guard-frozen.mjs", "matcher": "Write|Edit|MultiEdit|NotebookEdit", "timeout": 5, "failClosed": true },
-    { "event": "Stop", "script": "stop.mjs", "timeout": 10 }
+    {
+      "event": "SessionStart",
+      "script": "session-start.mjs",
+      "matcher": "startup|resume|clear|compact",
+      "timeout": 10
+    },
+    {
+      "event": "PreToolUse",
+      "script": "guard-frozen.mjs",
+      "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+      "timeout": 5,
+      "failClosed": true
+    },
+    {
+      "event": "PreToolUse",
+      "script": "guard-task.mjs",
+      "matcher": "Task|Agent",
+      "timeout": 5,
+      "failClosed": true
+    },
+    {
+      "event": "Stop",
+      "script": "stop.mjs",
+      "timeout": 10
+    }
   ]
 }

@@ -3,7 +3,7 @@ name: flow-spec
 description: Turns an intent, a ticket or a brief into a Flow State spec and takes it to the freeze gate. Use when the flow hub routes epic-sized work here, or the user asks to spec, define, or freeze a feature. Investigates the repository before asking questions, tags every decision with its provenance, scores the draft with a script, has a fresh reviewer check it, then presents at most fifteen lines and stops until the human says freeze.
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   flow-stage: spec
 ---
 
