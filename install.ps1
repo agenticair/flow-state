@@ -12,7 +12,7 @@
 [CmdletBinding()]
 param(
   [switch]$Project,
-  [string]$Only = "",
+  [string[]]$Only = @(),
   [switch]$Uninstall,
   [string]$Source = "",
   [string]$DestRoot = "",
@@ -59,7 +59,7 @@ $D = @{
 }
 
 # 3. Tools.
-if ($Only) { $Tools = $Only.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ } }
+if ($Only.Count -gt 0) { $Tools = $Only | ForEach-Object { $_.Split(",") } | ForEach-Object { $_.Trim() } | Where-Object { $_ } }
 else {
   $Tools = @()
   foreach ($t in "claude", "codex", "cursor", "copilot", "gemini") { if (Test-Path (Join-Path $Home_ ".$t")) { $Tools += $t } }
