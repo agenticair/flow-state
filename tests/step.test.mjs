@@ -163,12 +163,15 @@ test("rules.mjs collects AGENTS.md and CLAUDE.md imports and respects exclude", 
   fs.mkdirSync(path.join(dir, ".cursor/rules"), { recursive: true });
   fs.writeFileSync(path.join(dir, ".cursor/rules/scoped.mdc"), "---\nglobs: src/**\n---\nscoped\n");
   fs.writeFileSync(path.join(dir, ".cursor/rules/always.mdc"), "---\nalwaysApply: true\n---\nalways rule\n");
+  fs.mkdirSync(path.join(dir, ".github"), { recursive: true });
+  fs.writeFileSync(path.join(dir, ".github/PULL_REQUEST_TEMPLATE.md"), "## Why\n");
+  fs.writeFileSync(path.join(dir, ".github/CODEOWNERS"), "* @team\n");
   const r = collect(dir);
-  assert.deepEqual(r.files, ["AGENTS.md", "CLAUDE.md", ".cursor/rules/always.mdc"]);
+  assert.deepEqual(r.files, ["AGENTS.md", "CLAUDE.md", ".cursor/rules/always.mdc", ".github/PULL_REQUEST_TEMPLATE.md", ".github/CODEOWNERS"]);
   assert.match(r.text, /Never use semicolons/);
   assert.doesNotMatch(r.text, /scoped/);
   fs.writeFileSync(path.join(dir, "flow.config.json"), JSON.stringify({ rules: { exclude: ["CLAUDE.md"] } }));
-  assert.deepEqual(collect(dir).files, ["AGENTS.md", ".cursor/rules/always.mdc"]);
+  assert.deepEqual(collect(dir).files, ["AGENTS.md", ".cursor/rules/always.mdc", ".github/PULL_REQUEST_TEMPLATE.md", ".github/CODEOWNERS"]);
 });
 
 test("a full two-task run: brief with repository rules, controls, package with hash, verdict, sealed commit, delivered", () => {

@@ -3,7 +3,7 @@ name: flow-design
 description: Turns a UI story into a screen inventory before any code: route, reference in the project's own design system, components, the four states (empty, loading, error, success) with their copy, and a deviation log. Use for stories of type ui after the go gate, or when the user asks to design a screen or spec a UI change. Project-aware; never invents a visual language when the project has one.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: design
 ---
 

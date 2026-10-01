@@ -3,7 +3,7 @@ name: flow-review
 description: Reviews a story's finished diff, a branch, or a pull request with the judge agent plus the host tool's native review and any project lenses, grades every finding in the parent session, and routes each to patch, defer or spec. Use after flow-build delivers, when the user says review this, or before opening a pull request.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: review
 ---
 

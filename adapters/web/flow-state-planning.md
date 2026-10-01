@@ -1,4 +1,4 @@
-# Flow State 0.4.0 — planning bundle for web chats
+# Flow State 0.5.0 — planning bundle for web chats
 
 This file carries the planning stages of Flow State (hub, spec, stories, design) for a chat without a filesystem: a ChatGPT GPT, a Claude Project, a Gemini Gem. Read it in full on the first message.
 
@@ -23,6 +23,7 @@ The user types `flow` followed by an optional verb. In Claude Code and Cursor th
 | Verb | What it does | Writes |
 |---|---|---|
 | `flow` or `flow status` | Sections 1–3 below: tier, state, sizing, next skill | nothing |
+| `flow connect` | Runs `node ../flow-core/scripts/doctor.mjs`: machine, tools, tiers, project; prints a fix per missing item | nothing |
 | `flow help` | Lists the commands available in this tool (section 5) | nothing |
 | `flow settings` | Walks the config schema, proposes `flow.config.json`, writes it after a yes (section 4) | `flow.config.json` |
 | `flow next` | Dispatches the next stage skill in step mode: it stops at its first checkpoint | via the stage skill |
@@ -31,6 +32,8 @@ The user types `flow` followed by an optional verb. In Claude Code and Cursor th
 `next` and `run` are the same route at two speeds. `next` asks at every checkpoint; `run` asks only at the three gates (freeze, go, merge) and when it is genuinely stuck. Neither can pass a gate. `run` never goes below the project's `autonomy` setting: with `autonomy: gated`, `flow run` behaves like `flow next` and says so.
 
 ## 1. Discover what is installed (every request, never cached)
+
+For `flow connect`, run the doctor script and show its output verbatim, then explain each missing item in one line and stop. For other verbs, the checks below are enough.
 
 Look for sibling skill folders next to this one. Each `flow-*/SKILL.md` you find is an installed stage. Check the host for agent roles: a file named `flow-builder` or `flow-judge` in `.claude/agents/`, `~/.claude/agents/`, `.codex/agents/`, `~/.codex/agents/`, `.cursor/agents/`, `~/.cursor/agents/`, `.github/agents/`, `~/.copilot/agents/`, `.gemini/agents/`, `~/.gemini/agents/`, or in the host's plugin listing. Check `node --version`.
 

@@ -4,7 +4,7 @@
 //
 // Sources, in this order (each only if present):
 //   AGENTS.md, CLAUDE.md (+ its @imports, one level), .claude/rules/*.md, .cursor/rules/*.mdc (alwaysApply or with a description),
-//   .github/copilot-instructions.md, .github/instructions/*.instructions.md, GEMINI.md, CONTRIBUTING.md,
+//   .github/copilot-instructions.md, .github/instructions/*.instructions.md, GEMINI.md, CONTRIBUTING.md, the PR template, CODEOWNERS,
 //   then flow.config.json rules.include[] (globs are not supported; list paths). rules.exclude[] removes paths.
 //
 // Usage: node rules.mjs [--project <dir>] [--list] [--max-bytes 32768]
@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const DEFAULT_SOURCES = ["AGENTS.md", "CLAUDE.md", ".claude/rules", ".cursor/rules", ".github/copilot-instructions.md", ".github/instructions", "GEMINI.md", "CONTRIBUTING.md"];
+export const DEFAULT_SOURCES = ["AGENTS.md", "CLAUDE.md", ".claude/rules", ".cursor/rules", ".github/copilot-instructions.md", ".github/instructions", "GEMINI.md", "CONTRIBUTING.md", ".github/PULL_REQUEST_TEMPLATE.md", "PULL_REQUEST_TEMPLATE.md", ".github/CODEOWNERS", "CODEOWNERS"];
 
 function readConfig(project) {
   try {

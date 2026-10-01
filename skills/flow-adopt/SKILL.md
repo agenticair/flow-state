@@ -1,55 +1,66 @@
 ---
 name: flow-adopt
-description: Adopts a project into Flow State, once. Use when the flow hub says a project has no state file, or the user asks to set up, adopt, or onboard a repository for Flow State. Detects the doc family, writes flow.config.json and .agent/STATE.md, adds a verified block to AGENTS.md or CLAUDE.md, and registers existing review lenses. Never rewrites existing documentation.
+description: Adopts a project into Flow State, once, and refreshes it later. Use when the flow hub says a project has no state file, when the user asks to set up, adopt, onboard or connect a repository, or with "refresh" after the repository's rules changed. Discovers the repo's own rules and ways of working, asks only what it cannot discover, writes flow.config.json, .agent/STATE.md and a verified block in AGENTS.md or CLAUDE.md, and registers review lenses. Never rewrites existing documentation.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: adopt
 ---
 
 # flow-adopt
 
-Once per repository. Everything you write is small, additive and reversible; nothing existing is rewritten or deleted.
+Plug, then learn. The flow is not plug-and-play for a company's way of working; this skill is where it learns it. Everything written is small, additive and reversible; nothing existing is rewritten or deleted. `<core>` is `../flow-core`.
 
-## 1. Read before proposing
+## 0. Connect first
 
-- `README.md`, `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `.cursor/rules/` if present: these hold the rules the project already lives by.
-- `docs/` listing and the root `*.md` listing.
-- `package.json` scripts (or the equivalent): which command builds, tests, lints.
-- `.claude/commands/*.md`, `.claude/agents/*.md`, `.github/agents/*.md`: candidate review lenses.
-- `node --version`. Without Node, say so; `flow-spec` and later stages will label their scores `UNVERIFIED`.
+`node <core>/scripts/doctor.mjs` reports the machine, the tools and the project, with a fix per missing item. Show its output. If the project is not a git repository, stop.
 
-Then say in one paragraph what you found: the doc family, the verify command, the rules already present, the lenses. If it is not a git repository, stop; Flow State needs commits.
+## 1. Discover before asking (read-only)
 
-## 2. Detect the doc family
+Read, and keep notes with `path:line`:
 
-- `numbered`: files like `docs/01_*.md`, `docs/03_CHANGELOG.md`.
-- `flat`: root `CHANGELOG.md`, `DECISIONS.md`, `TECH_SPEC.md` or similar capitalised files.
-- Otherwise `custom`, and ask where the changelog and decisions live; write those two paths into `docs.map`.
+- **Rules for agents**: `node <core>/scripts/rules.mjs --list` (AGENTS.md, CLAUDE.md and imports, `.claude/rules`, `.cursor/rules`, Copilot instructions, GEMINI.md, CONTRIBUTING.md, the PR template, CODEOWNERS).
+- **How this repository ships**: `.github/workflows/*` or other CI files (what runs, on which branches, what must be green); `.github/PULL_REQUEST_TEMPLATE.md`; `CODEOWNERS`; branch names (`git branch -r`), whether the default branch is protected (`gh api repos/{owner}/{repo}/branches/<default>/protection` when `gh` is signed in; a 404 means unprotected); release files (`CHANGELOG.md`, tags, `package.json` version, a release workflow); deploy configuration (`railway.json`, `vercel.json`, Dockerfiles, `fly.toml`, deploy workflows); environments named in config or docs.
+- **How it is built and tested**: `package.json` scripts or the equivalent; lint, typecheck, test, e2e commands; whether any of them fails at HEAD (run them once; a command that already fails is not a verification predicate).
+- **Docs family**: `numbered` (`docs/01_*.md`), `flat` (root `CHANGELOG.md`, `DECISIONS.md`…), else `custom`.
+- **Design authority**: `DESIGN_SYSTEM.md`, `docs/*DESIGN*.md`, `docs/*CANON*.md`, a tokens file.
+- **Review lenses**: `.claude/commands/*.md`, `.claude/agents/*.md`, `.github/agents/*.md`, `.cursor/agents/*.md`.
 
-## 3. Propose, then wait
+Say in one paragraph what you found and what you could not.
 
-Show the exact `flow.config.json` you intend to write (schema: `../flow-core/config.schema.json`; defaults are `autonomy: gated`, judge `opus`, builder `sonnet`), the lens entries with triggers you inferred from each lens's own text, and the block you intend to add to the instructions file. Ask: "Write these?" Wait for a yes. In `assisted` or `auto` mode still wait here; adoption is a one-time human decision.
+## 2. Ask only the gaps, as numbered questions with the discovered default
 
-## 4. Write
+At most eight questions, each with what you inferred as the proposed answer. Typical gaps:
+
+1. Branching: trunk (push to the default branch) or feature branches with pull requests, and the branch naming?
+2. What must be green before a merge: which checks, and whether a human review is required and from whom (CODEOWNERS, a team, anyone)?
+3. How a change reaches production: automatic on merge, a manual deploy command, a release tag, a scheduled train? Which environments exist and in what order?
+4. Versioning and release notes: changelog file, SemVer bump rule, tags, release workflow?
+5. Definition of done beyond green tests: docs updated, screenshots for UI, migration notes, feature flags?
+6. The verify command Flow State should run before the merge gate, and a smoke command if one exists.
+7. Which review lenses (existing agent or command files) should run, and on what triggers (paths, keywords)?
+8. Autonomy: `gated` (every checkpoint), `assisted` (gates only), `auto`.
+
+Wait for the answers. In every autonomy mode, adoption waits here: it is a one-time human decision.
+
+## 3. Propose, then write after a yes
+
+Show the exact `flow.config.json` (schema `<core>/config.schema.json`), including `ship.branching`, `ship.defaultBranch`, `ship.branchPattern`, `ship.pr` (template, required checks, reviewers, labels), `ship.deploy`, `ship.environments`, `ship.release`, `ship.done`, `ship.verify`, `ship.smoke`, `docs.family` and map, `design.doc`, `lenses`, `autonomy`; and the block for the instructions file from `<core>/templates/agents-block.md`, whose **Ways of working** section states the answers in prose an agent can follow. Then:
 
 1. `flow.config.json` at the project root.
-2. `node ../flow-core/scripts/state.mjs init --dir <state.dir>` creates `.agent/STATE.md` with `stage: idle`.
-3. Append `.agent/` and `flow.config.user.json` to `.gitignore` if absent.
-4. Create `<specs.dir>/` if absent (default `docs/specs/`).
-5. The verified block, from `../flow-core/templates/agents-block.md`, between `<!-- flow-state:begin -->` and `<!-- flow-state:end -->` markers:
-   - into `AGENTS.md` if it exists or if no `CLAUDE.md` exists;
-   - into `CLAUDE.md` when that is the only instructions file and it does not import `AGENTS.md`;
-   - never both, never a new file when one of them exists.
-   Fill every line from what you read in step 1. A line you cannot verify is omitted, not guessed. Stamp the block with today's date and the current commit.
-6. Nothing else. Existing instructions stay word for word; if one contradicts Flow State (for example "never write tests"), report it and let the human decide.
+2. `node <core>/scripts/state.mjs init --dir <state.dir>`.
+3. `.agent/` and `flow.config.user.json` appended to `.gitignore` if absent; `<specs.dir>/` created.
+4. The block between `<!-- flow-state:begin -->` and `<!-- flow-state:end -->`: into `AGENTS.md` if it exists or no `CLAUDE.md` exists; into `CLAUDE.md` when that is the only instructions file and it does not import `AGENTS.md`; never both, never a new file when one exists. Every line verified in step 1; a line you cannot verify is omitted. Stamp the date and the commit.
+5. Nothing else. Existing instructions stay word for word; a contradiction with Flow State is reported, not resolved.
 
-## 5. Report
+Offer to commit as `chore: adopt Flow State`.
 
-List each file written or changed with one line each, the doc family, the lenses registered, and the next step: `flow-spec` with an intent or a ticket. Offer to commit as `chore: adopt Flow State`.
+## 4. Refresh
+
+With `refresh`: read the SHA stamped in the block; `git log --diff-filter=ADMR --name-only <sha>..HEAD -- <the rule files, CI, PR template, CODEOWNERS, package.json>`; re-run step 1 on what changed; propose the block and config updates as a diff; write after a yes; restamp. Retro proposals that touch the block go through the same path.
 
 ## Never
 
 - Never delete or rewrite an instruction someone else wrote.
-- Never add a rule that a hook, linter or test could enforce instead; say which mechanism should own it.
-- Never adopt without the human's yes in step 3.
+- Never add a rule a hook, linter or test could enforce; say which mechanism should own it.
+- Never guess a way of working; a gap the human does not answer is recorded as `[⚠️ Pending: define with <who>]` in the block, and `flow-ship` stops on it.

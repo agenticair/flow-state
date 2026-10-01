@@ -22,7 +22,7 @@ export const DEFAULTS = Object.freeze({
   ticket: { source: "none" },
   retro: { apply: "propose" },
   rules: { include: [], exclude: [], maxBytes: "32768" },
-  ship: { verify: "", smoke: "" },
+  ship: { verify: "", smoke: "", defaultBranch: "main", branchPattern: "", pr: { template: "", requiredChecks: [], reviewers: [], labels: [] }, deploy: "", environments: [], release: "", done: [] },
   design: { doc: "" },
   language: "en",
 });

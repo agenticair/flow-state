@@ -3,7 +3,7 @@ name: flow-core
 description: Shared runtime for Flow State. Holds the agent role definitions, conventions, templates, deterministic scripts and the config schema that the flow-* stage skills read by relative path. Never invoke this skill directly; it does nothing on its own.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: runtime
 ---
 
@@ -26,6 +26,7 @@ Stage skills reference these paths relative to their own folder:
 ../flow-core/scripts/verdict.mjs      check <verdict.json>: schema validation
 ../flow-core/scripts/step.mjs         the build step machine: init | next | report | controls | package | verdict | commit | status | abort
 ../flow-core/scripts/harvest.mjs      --spec <spec.md>: the retro's numbers from committed verdicts and git trailers
+../flow-core/scripts/doctor.mjs       flow connect: machine, tools, tiers, project; a fix per missing item
 ../flow-core/config.schema.json       the settings a project may set in flow.config.json
 ```
 

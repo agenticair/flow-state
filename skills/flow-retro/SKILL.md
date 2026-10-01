@@ -3,7 +3,7 @@ name: flow-retro
 description: Closes an epic or a spec with evidence: harvests the numbers from committed verdicts and git, judges the result against the frozen hypothesis, lists what the judge caught and what humans caught, and turns the lessons into concrete proposals, each a small diff the human accepts or rejects. Use when a spec's stories are done, after a merge, or when the user asks for a retro. This is the self-improvement loop; nothing changes silently.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: retro
 ---
 

@@ -4,6 +4,14 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-01
+
+### Added
+- `flow connect` and `doctor.mjs`: machine, tools, tier per tool, project adoption, config validity, rules found, verify command, ways of working; a fix command per missing item.
+- Ways of working: `flow-adopt` discovers CI, PR template, CODEOWNERS, branch protection, deploy and release configuration, asks only the gaps (branching, merge requirements, deploy, release, definition of done, verify, smoke, lenses, autonomy), records them in `flow.config.json` `ship.*` and a Ways of working section of the instructions block; `flow-ship` follows them and stops when they are unrecorded. `flow-adopt refresh` re-reads changed rules.
+- `rules.mjs` also collects the PR template and CODEOWNERS.
+- README: install, update, the skills-only caveat, clone install for tier A, and the plug/play/learn model.
+
 ## [0.4.0] - 2026-10-01
 
 ### Added

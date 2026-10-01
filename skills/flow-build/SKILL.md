@@ -3,7 +3,7 @@ name: flow-build
 description: Builds one story (or one one-session change) through a program-driven loop: a plan with declared files and tests, a builder agent that cannot certify, controls the program runs, a judge agent that cannot execute, a schema-checked verdict tied to the exact diff, and a commit of the sealed tree. Use after the go gate, when the flow hub routes one-session work here, or when the user asks to build, implement or code a story.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: build
 ---
 

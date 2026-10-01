@@ -4,7 +4,7 @@ A portable idea-to-merge workflow for coding agents. Spec, freeze, stories, buil
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.4.0.** Every stage is installed: the `flow` hub (`help`, `status`, `settings`, `next`, `run`), `flow-adopt`, `flow-spec` (freeze gate), `flow-stories` (go gate), `flow-design`, `flow-build` (builder/judge loop on a step machine), `flow-review`, `flow-ship` (merge gate), `flow-retro` (harvested numbers, proposals as diffs); four agent roles; conventions; repository-rules collection; the state file; four hooks (Claude Code, Codex, Cursor); a web planning bundle in `adapters/web/`. Not yet done before a public announcement: see the [ready-to-share checklist](https://github.com/agenticair/flow-state/issues/5). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
+> **Status: v0.5.0.** Every stage is installed: the `flow` hub (`help`, `status`, `settings`, `next`, `run`), `flow-adopt`, `flow-spec` (freeze gate), `flow-stories` (go gate), `flow-design`, `flow-build` (builder/judge loop on a step machine), `flow-review`, `flow-ship` (merge gate), `flow-retro` (harvested numbers, proposals as diffs); four agent roles; conventions; repository-rules collection; the state file; four hooks (Claude Code, Codex, Cursor); a web planning bundle in `adapters/web/`. Not yet done before a public announcement: see the [ready-to-share checklist](https://github.com/agenticair/flow-state/issues/5). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
 
 ## Why
 
@@ -21,53 +21,42 @@ The design is distilled from three public systems that run in production: Mercad
 
 ## Install
 
-Pick one route per tool.
+```bash
+npx skills add agenticair/flow-state
+```
+
+Pick the skills and the editors you use. You need git and Node 20+; `gh` is optional (tickets, pull requests, retro issues). Works in PowerShell, Git Bash and WSL: every script is Node.
+
+Then run `flow connect` in your project: it checks git, node, gh, which tools you have, whether the skills, agent roles and hooks are installed in each, whether the project is adopted, and tells you how to fix anything missing.
+
+Update anytime with `npx skills update`.
+
+**`npx skills add` installs the skills only: no agent roles and no hooks.** Without the roles, the judge runs as an ordinary assistant with a shell and nothing stops an edit to a frozen spec (tier B). For tier A, install from a clone or a plugin route:
 
 ```bash
-# Skills into every agent you have (needs Node for the CLI itself)
-npx skills add agenticair/flow-state
-
-# Native plugin routes
-/plugin marketplace add agenticair/flow-state        # inside Claude Code, then /plugin install flow-state@flow-state
-codex plugin marketplace add agenticair/flow-state    # Codex
-
-# Full install: skills plus agent roles for each tool found, no runtime needed
-curl -fsSL https://raw.githubusercontent.com/agenticair/flow-state/main/install.sh | bash
+git clone https://github.com/agenticair/flow-state && cd flow-state && ./install.sh
 ```
 
 ```powershell
-irm https://raw.githubusercontent.com/agenticair/flow-state/main/install.ps1 | iex
+git clone https://github.com/agenticair/flow-state; cd flow-state; .\install.ps1
 ```
 
-The installer copies (never symlinks) into user scope by default. It also installs three hooks where the tool supports them: session start hydrates the state file, a guard denies edits to a frozen spec, and a stop check asks for the state file to be updated when commits moved past it. For Codex and Cursor it writes `hooks.json` only if none exists and otherwise prints the entries to merge; for Claude Code the plugin route carries the hooks, and the installer route leaves a snippet to merge into `settings.json`. Scope: `--project` (bash) or `-Project` (PowerShell) installs into the current repository instead. `--uninstall` / `-Uninstall` removes exactly what it added. Node 20+ is optional: without it, skills run but every score and verdict check is labelled `UNVERIFIED`.
+That copies the skills, the agent roles (builder with a shell, judge without) and the hook scripts for every tool it finds, writes `hooks.json` for Codex and Cursor when none exists, and prints the settings snippet for Claude Code. `git pull` then re-running the installer updates it. `--project` / `-Project` installs into the current repository instead of your user profile; `--uninstall` / `-Uninstall` removes exactly what was added.
 
-Then, in a project, invoke `flow` (`/flow`, `$flow` or `@flow` depending on the tool).
+Native plugin routes carry roles and hooks where the tool allows:
 
-## How to start
+```text
+/plugin marketplace add agenticair/flow-state      # Claude Code, then /plugin install flow-state@flow-state
+codex plugin marketplace add agenticair/flow-state  # Codex: skills only; run the installer for roles and hooks
+```
 
-1. Install (above) and open your coding tool in a project.
-2. Type `flow` (`/flow` in Claude Code, Cursor and Copilot; `$flow` in Codex). It tells you the tier your tool runs at and that the project is not adopted yet.
-3. Type `flow settings` if you want to change defaults first (autonomy, models, where specs live). It shows the file and writes it after you say yes.
-4. Invoke `flow-adopt`. It reads your repo, proposes `flow.config.json` and a short block for your `AGENTS.md` or `CLAUDE.md`, and writes them after you say yes. Nothing existing is rewritten.
-5. Invoke `flow-spec` with an intent, a ticket, or a brief. It investigates the repo before asking you anything, drafts the spec, scores it, has a fresh reviewer check it, then shows you at most fifteen lines and stops.
-6. Reply `freeze`. Then `flow next` or `flow run` takes you through stories (you name the story that starts: the **go** gate), build (a builder agent writes, a judge agent with no shell judges, a program checks and commits each task), and review.
+## Plug, play, learn
 
-### Commands
+The flow is not plug-and-play for a company's way of working, and it does not pretend to be. Three layers make it fit:
 
-| Command | Does |
-|---|---|
-| `flow` / `flow status` | Where the project is, what tier your tool runs at, what comes next |
-| `flow help` | Lists commands and stages available in your tool, and the three gates |
-| `flow settings` | Interactive config; writes `flow.config.json` after you confirm |
-| `flow next` | Runs the next stage in step mode: stops at every checkpoint |
-| `flow run` | Runs the next stage in run mode: stops only at a gate or when stuck |
-| `flow-adopt`, `flow-spec`, … | The stage skills, invocable directly with your tool's skill syntax |
-
-`next` and `run` are the same path at two speeds. `run` never goes below your `autonomy` setting: with `gated` it behaves like `next`.
-
-### What happens when you freeze
-
-The spec file gets `Status: FROZEN` and a date. A hook denies any edit to it from then on; later changes go to `<slug>.changes.md`, one dated entry each, and only you can reopen the gate. The state file records `stage: spec, gate: freeze`. The next stage, stories, turns the spec into a slice table, and the second gate, **go**, is you choosing which story starts. The third gate, **merge**, is you merging the pull request. Nothing in the flow has a permanent external effect except that merge.
+1. **Discover.** `flow-adopt` reads what the repository already says: `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, Copilot and Cursor rules, the PR template, CODEOWNERS, CI workflows, deploy config, branch names and protection, the scripts in `package.json`. Those rules are pasted into every builder brief and judge package above Flow State's own conventions; repository rules win, rule by rule.
+2. **Ask.** What cannot be read is asked once, with the discovered default proposed: branching model, what must be green before a merge and who reviews, how a merge reaches production and through which environments, versioning and release notes, the definition of done, the verify and smoke commands, autonomy. The answers go to `flow.config.json` (`ship.*`) and to a Ways of working section in the project's instructions file, so every agent and every human reads the same thing. `flow-ship` follows it and refuses to guess: an unrecorded way of working stops the merge gate.
+3. **Learn.** `flow-retro` harvests the numbers from every build and proposes concrete diffs to the project's rules, lenses and config; the human accepts each. `flow-adopt refresh` re-reads the rules when they change. General lessons become issues on this repository.
 
 ## What you get, per tool
 

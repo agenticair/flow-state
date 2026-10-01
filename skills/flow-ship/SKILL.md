@@ -3,7 +3,7 @@ name: flow-ship
 description: Takes reviewed, committed stories to the merge gate: runs the project's verify command and smoke, checks the changelog, collects the visual-gate evidence, writes the pull request body (or prepares the push when the work is on the main branch), and stops for the human to merge. Use after flow-review closes a story or a batch, or when the user says ship it or open a PR.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   flow-stage: ship
 ---
 
@@ -13,7 +13,7 @@ You get everything ready for the one action that has a permanent external effect
 
 ## 0. Preconditions
 
-Every story in scope has `Status: done` with its review closed. The working tree is clean. `node <core>/scripts/config.mjs` gives `ship.verify` and `ship.smoke` if the project set them; otherwise use the Verify line in the project's Flow State block in `AGENTS.md` or `CLAUDE.md`.
+Every story in scope has `Status: done` with its review closed. The working tree is clean. `node <core>/scripts/config.mjs --get ship` gives this repository's ways of working as `flow-adopt` recorded them: `verify`, `smoke`, `branching`, `defaultBranch`, `branchPattern`, `pr` (template, required checks, reviewers, labels), `deploy`, `environments`, `release`, `done`. The Ways of working section of the project's Flow State block says the same in prose. If `branching` is unset, or any of these reads `[⚠️ Pending`, stop and route to `flow-adopt`: shipping a company's code the wrong way is not a judgement call.
 
 ## 1. Checks, all of them, exit codes only
 
@@ -23,10 +23,12 @@ Every story in scope has `Status: done` with its review closed. The working tree
 4. **Visual gate**: for every story with `Gate: visual`, produce the evidence the human will look at: start the app locally and take a screenshot of the affected screen, or point at the deployed preview. Attach the path or link to the story file. No screenshot, no merge for that story.
 5. **Deferred work**: list what `deferred-work.md` holds for these stories, so the human knows what is not in this merge.
 
-## 2. The pull request, or the push
+## 2. The pull request, or the push, the way this repository does it
 
-- On a feature branch: `gh pr create` with a body that lists the spec, the stories, the verdict commits (`git log --grep "Flow-State:"`), the visual evidence, the deferred items, and `Closes #<ticket>` when the spec has a ticket. The project's native review runs on the PR where the tool offers it (Copilot review, Claude Code `/code-review` on the PR number).
-- On the main branch (solo projects): the push is the merge. Show the commit list and the same summary; do not push.
+- `ship.done` items are checked one by one before anything else (docs, screenshots, migration notes, flags); a missing one goes back to `flow-build` as a task.
+- `branching: branches`: the work must be on a branch matching `branchPattern`; if it was built on the default branch, say so and stop (moving commits is the human's call). `gh pr create` with a body that lists the spec, the stories, the verdict commits (`git log --grep "Flow-State:"`), the visual evidence, the deferred items, and `Closes #<ticket>` when the spec has a ticket. The project's native review runs on the PR where the tool offers it (Copilot review, Claude Code `/code-review` on the PR number).
+- `branching: trunk`: the push to `defaultBranch` is the merge. Show the commit list and the same summary; do not push.
+- Then say what `deploy` means for this merge (automatic on merge, a command the human runs, a tag, a train) and which `environments` it reaches in order, so the human knows what the merge sets in motion.
 
 ## 3. The merge gate
 

@@ -161,14 +161,83 @@
     "ship": {
       "type": "object",
       "additionalProperties": false,
+      "description": "How this repository ships. Discovered and asked by flow-adopt; followed by flow-ship.",
       "properties": {
         "verify": {
           "type": "string",
-          "description": "Build, lint and test command run by flow-ship before the merge gate."
+          "description": "Build, lint and test command run before the merge gate."
         },
         "smoke": {
           "type": "string",
           "description": "Optional production or staging smoke command."
+        },
+        "branching": {
+          "type": "string",
+          "enum": [
+            "trunk",
+            "branches"
+          ],
+          "description": "trunk: push to the default branch is the merge. branches: feature branches with a pull request."
+        },
+        "defaultBranch": {
+          "type": "string",
+          "default": "main"
+        },
+        "branchPattern": {
+          "type": "string",
+          "description": "Feature branch naming, e.g. feat/<slug> or <ticket>-<slug>."
+        },
+        "pr": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "template": {
+              "type": "string",
+              "description": "Path to the PR template, if any."
+            },
+            "requiredChecks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "CI check names that must be green."
+            },
+            "reviewers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Who must review: usernames, teams, or CODEOWNERS."
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "deploy": {
+          "type": "string",
+          "description": "How a merge reaches production: 'automatic on merge', a command, a release tag pattern, a train."
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "In order, e.g. [\"staging\", \"production\"]."
+        },
+        "release": {
+          "type": "string",
+          "description": "Versioning and release notes rule, e.g. 'SemVer in package.json, CHANGELOG Unreleased, tag vX.Y.Z'."
+        },
+        "done": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Definition of done beyond green tests."
         }
       }
     },
