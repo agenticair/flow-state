@@ -189,6 +189,18 @@ const norm = (p) => p.replace(/\\/g, "/").replace(/^\.\//, "");
 const fileSha = (abs) => (fs.existsSync(abs) && fs.statSync(abs).isFile() ? sha256(fs.readFileSync(abs)) : "missing");
 const porcelain = (c) => execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: c.project, encoding: "utf8" }).split("\n").filter(Boolean);
 const porcelainPath = (line) => norm(line.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, ""));
+// Windows: git prints forward slashes and long names, os.tmpdir() may be an 8.3 short name, and case does not matter.
+const samePath = (a, b) => {
+  const real = (p) => {
+    try {
+      return fs.realpathSync.native(p);
+    } catch {
+      return path.resolve(p);
+    }
+  };
+  const x = real(a), y = real(b);
+  return process.platform === "win32" ? x.toLowerCase() !== y.toLowerCase() : x !== y;
+};
 function existsAtBase(c, base, relPath) {
   try {
     execFileSync("git", ["cat-file", "-e", `${base}:${relPath}`], { cwd: c.project, stdio: "ignore" });
@@ -336,7 +348,7 @@ function init(c, argv) {
     return 8;
   }
   const top = git(c, ["rev-parse", "--show-toplevel"]);
-  if (fs.realpathSync(top) !== fs.realpathSync(c.project)) {
+  if (samePath(top, c.project)) {
     console.error(`refused: ${c.project} is not the repository root (${top}); run from the root, with paths relative to it`);
     return 8;
   }
