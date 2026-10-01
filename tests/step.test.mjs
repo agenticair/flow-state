@@ -191,6 +191,8 @@ test("a full two-task run: brief with repository rules, controls, package with h
   let out = JSON.parse(n.stdout);
   assert.equal(out.action, "dispatch flow-builder");
   const brief = fs.readFileSync(path.join(dir, out.brief), "utf8");
+  assert.ok(brief.indexOf("## Ground rules") < brief.indexOf("## Objective"), "ground rules come first in the brief");
+  assert.match(brief, /GR-8 Never loosen a check/);
   assert.match(brief, /## Repository rules[\s\S]*Never use semicolons/);
   assert.match(brief, /## Closed decisions\n\n- D-1 greet is a pure function/);
   assert.match(brief, /Anti-scope: no shouting in production/);
@@ -206,6 +208,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   ok(run(dir, "package"), "package");
   const pkg = fs.readFileSync(path.join(dir, ".agent/run/task-1-package.md"), "utf8");
   assert.match(pkg, /^Review token: [0-9a-f]{64}/);
+  assert.match(pkg, /## Ground rules \(not overridable; open with Read\)\n\n- .*ground-rules\.md/);
   assert.match(pkg, /## Repository rules[\s\S]*AGENTS\.md/);
   assert.match(pkg, /## Notes this project keeps for the judge[\s\S]*\.flow\/roles\/flow-judge\.md/);
   assert.match(pkg, /\+export const greet/);

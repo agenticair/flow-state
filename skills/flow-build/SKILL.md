@@ -1,13 +1,15 @@
 ---
 name: flow-build
-description: Builds one story (or one one-session change) through a program-driven loop: a plan with declared files and tests, a builder agent that cannot certify, controls the program runs, a judge agent that cannot execute, a schema-checked verdict tied to the exact diff, and a commit of the sealed tree. Use after the go gate, when the flow hub routes one-session work here, or when the user asks to build, implement or code a story.
+description: Stage build of Flow State (type "flow build"). Builds one story (or one one-session change) through a program-driven loop: a plan with declared files and tests, a builder agent that cannot certify, controls the program runs, a judge agent that cannot execute, a schema-checked verdict tied to the exact diff, and a commit of the sealed tree. Use after the go gate, when the flow hub routes one-session work here, or when the user asks to build, implement or code a story.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: build
 ---
 
 # flow-build
+
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
 
 You drive the loop; you do not write the code and you do not judge it. The step machine at `<core>/scripts/step.mjs` decides what comes next; you ask it and do exactly what it prints. `<core>` is `../flow-core`, relative to this skill.
 

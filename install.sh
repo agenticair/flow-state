@@ -90,6 +90,7 @@ fi
 
 copy_skills() { # $1 = dest dir
   run mkdir -p "$1"
+  copy_skills_cleanup "$1"
   for s in "$SOURCE"/skills/*/; do
     n="$(basename "$s")"
     run rm -rf "$1/$n"; run cp -R "$s" "$1/$n"; log "  skill  $1/$n"
@@ -118,7 +119,8 @@ remove_hooks() { # $1 = scripts dir, $2 = hooks.json
   [ -f "$2" ] && grep -q "flow-state" "$2" && log "  note   $2 still references flow-state; remove those entries by hand."
   return 0
 }
-remove_skills() { for s in "$SOURCE"/skills/*/; do n="$(basename "$s")"; [ -e "$1/$n" ] && { run rm -rf "$1/$n"; log "  removed $1/$n"; }; done; return 0; }
+remove_skills() { for s in "$SOURCE"/skills/*/ ; do n="$(basename "$s")"; [ -e "$1/$n" ] && { run rm -rf "$1/$n"; log "  removed $1/$n"; }; done; [ -e "$1/flow-adopt" ] && { run rm -rf "$1/flow-adopt"; log "  removed stale $1/flow-adopt"; }; return 0; }
+copy_skills_cleanup() { [ -e "$1/flow-adopt" ] && { run rm -rf "$1/flow-adopt"; log "  removed stale $1/flow-adopt (renamed to flow-setup)"; }; return 0; }
 remove_agents() { for f in "$1"/*; do [ -f "$f" ] || continue; t="$2/$(basename "$f")"; [ -e "$t" ] && { run rm -f "$t"; log "  removed $t"; }; done; return 0; }
 
 for t in $tools; do
@@ -140,7 +142,8 @@ done
 
 [ -n "$TMP" ] && rm -rf "$TMP"
 
-if [ "$UNINSTALL" = 1 ]; then log "Uninstalled."; exit 0; fi
+if [ "$UNINSTALL" = 1 ]; then rm -f "$HOME/.flow/install.json"; log "Uninstalled."; exit 0; fi
+if [ "$DRY" != 1 ] && [ -z "$DEST_ROOT" ]; then mkdir -p "$HOME/.flow" && printf '{ "source": "%s", "version": "%s", "scope": "%s", "installedAt": "%s" }\n' "$SOURCE" "$VERSION" "$SCOPE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$HOME/.flow/install.json"; fi
 if command -v node >/dev/null 2>&1; then
   log "Node $(node --version) found: scoring, verdict checks and the step machine will run."
 else

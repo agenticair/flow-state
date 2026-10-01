@@ -1,13 +1,15 @@
 ---
 name: flow-design
-description: Turns a UI story into a screen inventory before any code: route, reference in the project's own design system, components, the four states (empty, loading, error, success) with their copy, and a deviation log. Use for stories of type ui after the go gate, or when the user asks to design a screen or spec a UI change. Project-aware; never invents a visual language when the project has one.
+description: Stage design of Flow State (type "flow design"). Turns a UI story into a screen inventory before any code: route, reference in the project's own design system, components, the four states (empty, loading, error, success) with their copy, and a deviation log. Use for stories of type ui after the go gate, or when the user asks to design a screen or spec a UI change. Project-aware; never invents a visual language when the project has one.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: design
 ---
 
 # flow-design
+
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
 
 You write down what a screen must look like and do before a builder touches it. The project's design system is the law; you translate, you do not invent. `<core>` is `../flow-core`.
 

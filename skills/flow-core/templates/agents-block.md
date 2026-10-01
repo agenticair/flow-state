@@ -1,7 +1,7 @@
 <!-- flow-state:begin -->
 ## Flow State
 
-This repository is adopted into Flow State (verified <YYYY-MM-DD> against <short sha>). Invoke `flow` to see where a piece of work is and what comes next; `flow connect` checks the setup.
+This repository is set up with Flow State (verified <YYYY-MM-DD> against <short sha>). Invoke `flow` to see where a piece of work is and what comes next; `flow connect` checks the setup.
 
 - **State:** `.agent/STATE.md` (git-ignored). Read it before assuming a stage. Update `last_commit` and `stage` when a stage closes.
 - **Specs:** `<specs.dir>/<date>-<slug>.md`. A file with `Status: FROZEN` is not edited; changes go to `<slug>.changes.md`.

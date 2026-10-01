@@ -25,6 +25,7 @@ import { collect as collectRules } from "./rules.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CONVENTIONS = path.join(here, "..", "conventions");
+const GROUND_RULES = path.join(here, "..", "ground-rules.md");
 export const STEPS = ["implement", "controls", "package", "judge", "commit"];
 export const BUDGET = { controls: 2, judge: 2 };
 
@@ -171,6 +172,7 @@ export function composeBrief(run, task, spec, story, conventionsText, paths, rul
   const lines = [];
   lines.push(`# Task ${task.n}/${run.tasksTotal}: ${task.name}`, "");
   lines.push(`Story: ${run.story}`, `Spec: ${run.spec}`, `Attempt: ${run.attempt}`, `Report to: ${paths.report}`, "");
+  lines.push("## Ground rules", "", groundRulesText(), "");
   lines.push("## Objective", "", task.objective, "");
   lines.push("## Files", "", ...task.files.map((f) => `- ${f.mode}: ${f.path}`), "");
   lines.push("## TDD", "", `Write this test first and see it fail: \`${task.tdd}\``, "");
@@ -188,6 +190,14 @@ export function composeBrief(run, task, spec, story, conventionsText, paths, rul
   return lines.join("\n");
 }
 
+function conventionsExcluded(c) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(c.project, "flow.config.json"), "utf8"))?.conventions?.exclude || [];
+  } catch {
+    return [];
+  }
+}
+
 // "Teach the agents": a project may keep notes per role under <roles.dir> (default .flow/roles/<role>.md).
 function roleNotesPath(c, role) {
   let dir = ".flow/roles";
@@ -203,11 +213,16 @@ function roleNotes(c, role) {
   return p ? fs.readFileSync(p, "utf8") : "";
 }
 
-function conventionsText() {
+function groundRulesText() {
+  return fs.existsSync(GROUND_RULES) ? fs.readFileSync(GROUND_RULES, "utf8").trim() : "(ground-rules.md not found)";
+}
+
+function conventionsText(c) {
   if (!fs.existsSync(CONVENTIONS)) return "(no conventions folder found)";
+  const excluded = new Set(conventionsExcluded(c));
   return fs
     .readdirSync(CONVENTIONS)
-    .filter((f) => f.endsWith(".md"))
+    .filter((f) => f.endsWith(".md") && !excluded.has(f.replace(/\.md$/, "")))
     .sort()
     .map((f) => `### conventions/${f}\n\n${fs.readFileSync(path.join(CONVENTIONS, f), "utf8").trim()}`)
     .join("\n\n");
@@ -264,7 +279,7 @@ function next(c) {
       const spec = parseSpec(fs.readFileSync(path.resolve(c.project, run.spec), "utf8"));
       const story = parseStory(fs.readFileSync(path.resolve(c.project, run.story), "utf8"));
       fs.mkdirSync(c.workDir, { recursive: true });
-      fs.writeFileSync(p.brief, composeBrief(run, taskOf(run), spec, story, conventionsText(), { report: rel(c, p.report) }, collectRules(c.project), roleNotes(c, "flow-builder")));
+      fs.writeFileSync(p.brief, composeBrief(run, taskOf(run), spec, story, conventionsText(c), { report: rel(c, p.report) }, collectRules(c.project), roleNotes(c, "flow-builder")));
       run.seal = `${run.task}:implement:${run.attempt}`;
       writeRun(c, run);
       out.action = "dispatch flow-builder";
@@ -401,12 +416,14 @@ function pkg(c) {
   }
   const token = sha256(diff);
   const files = git(c, ["diff", "--cached", "--name-status"]);
-  const conv = fs.existsSync(CONVENTIONS) ? fs.readdirSync(CONVENTIONS).filter((f) => f.endsWith(".md")).map((f) => `- ${path.join(CONVENTIONS, f)}`) : [];
+  const excluded = new Set(conventionsExcluded(c));
+  const conv = fs.existsSync(CONVENTIONS) ? fs.readdirSync(CONVENTIONS).filter((f) => f.endsWith(".md") && !excluded.has(f.replace(/\.md$/, ""))).map((f) => `- ${path.join(CONVENTIONS, f)}`) : [];
   const ruleFiles = collectRules(c.project).files.map((f) => `- ${path.resolve(c.project, f)}`);
   const judgeNotes = roleNotesPath(c, "flow-judge");
   const md = [
     `Review token: ${token}`, "",
     `# Review package: task ${run.task}/${run.tasksTotal} (${taskOf(run).name})`, "",
+    "## Ground rules (not overridable; open with Read)", "", `- ${GROUND_RULES}`, "",
     "## Brief", "", `- ${p.brief}`, "",
     "## Repository rules (win over conventions, rule by rule; open with Read and cite file and rule)", "", ...(ruleFiles.length ? ruleFiles : ["- none found"]), "",
     ...(judgeNotes ? ["## Notes this project keeps for the judge (open with Read)", "", `- ${judgeNotes}`, ""] : []),

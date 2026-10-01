@@ -1,13 +1,15 @@
 ---
 name: flow-spec
-description: Turns an intent, a ticket or a brief into a Flow State spec and takes it to the freeze gate. Use when the flow hub routes epic-sized work here, or the user asks to spec, define, or freeze a feature. Investigates the repository before asking questions, tags every decision with its provenance, scores the draft with a script, has a fresh reviewer check it, then presents at most fifteen lines and stops until the human says freeze.
+description: Stage spec of Flow State (type "flow spec"). Turns an intent, a ticket or a brief into a Flow State spec and takes it to the freeze gate. Use when the flow hub routes epic-sized work here, or the user asks to spec, define, or freeze a feature. Investigates the repository before asking questions, tags every decision with its provenance, scores the draft with a script, has a fresh reviewer check it, then presents at most fifteen lines and stops until the human says freeze.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: spec
 ---
 
 # flow-spec
+
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
 
 You write the contract the rest of the flow builds against. The human freezes it after reading fifteen lines, so the fifteen lines must carry every decision and where each came from.
 
@@ -17,13 +19,13 @@ Paths below are relative to this skill's folder. `<core>` is `../flow-core`.
 
 You run in one of two modes, passed by the hub or implied by `autonomy` in the config: **step** (stop at every checkpoint: after investigation, after the draft, after the review) or **run** (continue through checkpoints; stop only for questions the repository cannot answer and at the freeze gate). `autonomy: gated` forces step mode.
 
-- `node <core>/scripts/config.mjs` prints the merged config. If it fails because the project has no `flow.config.json` or `.agent/STATE.md`, stop and route to `flow-adopt`.
+- `node <core>/scripts/config.mjs` prints the merged config. If it fails because the project has no `flow.config.json` or `.agent/STATE.md`, stop and route to `flow setup`.
 - Read `.agent/STATE.md`. If a feature is already in `stage: spec` with `gate: none`, ask whether to continue it or start another.
 - If `node` is missing, every score you produce is labelled `UNVERIFIED (no node)`.
 
 ## 1. Take the intent
 
-Accept any of: a sentence, a ticket reference (with `ticket.source: github`, run `gh issue view <n> --json title,body,url`), a brief file, or a pointer to a document in the repo. Restate it in one line. If it is plainly one-session work, say so and route to `flow-build` instead; a spec for a typo is waste.
+Accept any of: a sentence, a ticket reference, a brief file, or a pointer to a document in the repo. For a ticket, `node <core>/scripts/doctor.mjs --only <ticket.source>` must pass; then read it the way that integration allows (`gh issue view <n> --json title,body,url` for GitHub; the Jira or Linear MCP tool otherwise). A ticket that cannot be read is `[⚠️ Pending: ticket <ref> not readable; connect <source>]`, never paraphrased from memory. Restate it in one line. If it is plainly one-session work, say so and route to `flow-build` instead; a spec for a typo is waste.
 
 ## 2. Investigate before asking
 

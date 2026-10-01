@@ -12,7 +12,9 @@ Prompt content plus a few deterministic scripts. Skills under `skills/` are the 
 - Length is paid on every run. Do not add instructions for exotic cases; the reviewing human corrects those when they happen.
 - `SKILL.md` frontmatter uses only the six Agent Skills fields: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. `name` must equal the directory name.
 - Never invent. A skill that lacks a fact writes `[⚠️ Pending: define with <who>]`, never a plausible number.
-- `agents/` and `adapters/` are generated. Edit `skills/flow-core/roles/*.md` and `hooks/`, then run `npm run build`. CI fails if committed output is stale.
+- `skills/flow-core/ground-rules.md` is the floor for every agent: every stage skill opens with the loader line, the step machine pastes it first, the generator inlines it. Keep it under 260 words; change it only with a CHANGELOG entry.
+- Users type `flow <verb>`. A new stage is a `flow-<stage>` folder plus one row in the hub's verb table; never surface a hyphenated name to the user.
+- `agents/`, `adapters/` and `skills/flow-core/MANIFEST.json` are generated. Edit `skills/flow-core/roles/*.md` and `hooks/`, then run `npm run build`. CI fails if committed output is stale.
 - Scripts get tests (`node --test`). Prompts do not: automated tests assert outcomes of deterministic code only.
 - Node 20+ is the only runtime. No Python, no dependencies in `package.json`.
 - Bump `version` in `plugin.json` in the same PR as any change to what a user invokes: PATCH for wording, MINOR for a new skill or flag, MAJOR for a rename or a changed input/output. `npm run build` copies the version into the other manifests. Docs-only changes do not bump.

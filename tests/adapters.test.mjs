@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { generateAll, diffAgainstDisk, render, renderHooks } from "../tools/build-adapters.mjs";
 
 const role = {
@@ -44,7 +45,7 @@ test("read-only roles become a read-only Codex sandbox and a Cursor readonly age
 
 test("Codex TOML escapes backslashes and keeps the body inside developer_instructions", () => {
   const toml = render(role)["adapters/codex/agents/flow-judge.toml"];
-  assert.match(toml, /developer_instructions = """\nBody with a "quote" and a backslash \\\\ here\.\n"""/);
+  assert.match(toml, /developer_instructions = """\n## Ground rules\n[\s\S]*Body with a "quote" and a backslash \\\\ here\.\n"""/);
 });
 
 test("tool vocabularies are translated per tool", () => {
@@ -82,4 +83,19 @@ test("the web bundle carries the planning stages, templates and conventions", ()
   assert.match(bundle, /UNVERIFIED \(web\)/);
   assert.doesNotMatch(bundle, /^---\nname: flow/m, "frontmatter is stripped");
   assert.match(files["adapters/web/INSTRUCTIONS.md"], /PASTE BOUNDARY/);
+});
+
+test("the ground rules are inlined first in every generated agent and in the web bundle", () => {
+  const gr = fs.readFileSync("skills/flow-core/ground-rules.md", "utf8");
+  assert.match(gr, /GR-1 Never invent/);
+  assert.match(gr, /GR-10 Short answers/);
+  for (const f of ["agents/flow-builder.md", "agents/flow-judge.md", "agents/flow-architect.md", "adapters/codex/agents/flow-builder.toml", "adapters/cursor/agents/flow-judge.md", "adapters/copilot/agents/flow-builder.agent.md", "adapters/gemini/agents/flow-researcher.md"]) {
+    const text = fs.readFileSync(f, "utf8");
+    const at = text.indexOf("## Ground rules");
+    assert.ok(at !== -1, `${f} carries the ground rules`);
+    assert.ok(at < text.indexOf("GR-9 Secrets"), f);
+    assert.ok(text.indexOf("The ground rules above are the floor") > at, `${f}: the role body follows the rules`);
+  }
+  const web = fs.readFileSync("adapters/web/flow-state-planning.md", "utf8");
+  assert.ok(web.indexOf("# Ground rules") < web.indexOf("# Stage: flow"), "web bundle opens with the ground rules");
 });

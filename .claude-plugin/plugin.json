@@ -1,7 +1,7 @@
 {
   "name": "flow-state",
   "displayName": "Flow State",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A portable idea-to-merge workflow for coding agents: spec, freeze, stories, build, judge, ship, retro. The human decides three times; a program checks the rest.",
   "author": {
     "name": "AgenticAir",

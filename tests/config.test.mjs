@@ -9,7 +9,7 @@ test("defaults load when no config file exists", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "flow-cfg-"));
   const { config, errors } = load(dir);
   assert.deepEqual(errors, []);
-  assert.equal(config.autonomy, "gated");
+  assert.equal(config.autonomy, "assisted");
   assert.equal(config.models.judge, "opus");
 });
 

@@ -63,11 +63,33 @@ export function validateRoles(root = ROOT) {
   return problems;
 }
 
+export function validateGroundRules(root = ROOT) {
+  const problems = [];
+  const gr = path.join(root, "skills", "flow-core", "ground-rules.md");
+  if (!fs.existsSync(gr)) return ["skills/flow-core/ground-rules.md: missing"];
+  const words = fs.readFileSync(gr, "utf8").split(/\s+/).filter(Boolean).length;
+  if (words > 260) problems.push(`ground-rules.md: ${words} words; keep it under 260, it is paid on every run`);
+  for (const d of listSkillDirs(root)) {
+    const name = path.basename(d);
+    if (name === "flow-core") continue;
+    const text = fs.readFileSync(path.join(d, "SKILL.md"), "utf8");
+    if (!text.includes("Ground rules: read `../flow-core/ground-rules.md` first")) problems.push(`skills/${name}/SKILL.md: missing the ground-rules loader line`);
+  }
+  const m = path.join(root, "skills", "flow-core", "MANIFEST.json");
+  if (fs.existsSync(m)) {
+    const mv = readJSON(m).version;
+    const pv = readJSON(path.join(root, "plugin.json")).version;
+    if (mv !== pv) problems.push(`skills/flow-core/MANIFEST.json: version ${mv} != plugin.json ${pv} (run npm run build)`);
+  } else problems.push("skills/flow-core/MANIFEST.json: missing (run npm run build)");
+  return problems;
+}
+
 export function validateAll(root = ROOT) {
   const problems = [];
   const dirs = listSkillDirs(root);
   if (!dirs.length) problems.push("skills/: no skills found");
   for (const d of dirs) problems.push(...validateSkillDir(d));
+  problems.push(...validateGroundRules(root));
   problems.push(...validateRoles(root));
   problems.push(...validateVersions(root));
   return problems;

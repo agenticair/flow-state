@@ -13,8 +13,14 @@
         "assisted",
         "auto"
       ],
-      "default": "gated",
-      "description": "gated: stop at every checkpoint. assisted: stop only at the three gates (freeze, go, merge). auto: build runs unattended and halts with a reason instead of asking; freeze and merge remain human."
+      "default": "assisted",
+      "description": "gated: stop at every checkpoint. assisted: stop only at the three gates (freeze, go, merge). auto: build runs unattended and halts with a reason instead of asking; freeze and merge remain human.",
+      "x-question": "How much should Flow State ask? assisted: stops at freeze, go, merge and when stuck. gated: every checkpoint. auto: a build halts instead of asking.",
+      "x-scope": [
+        "user",
+        "project",
+        "personal"
+      ]
     },
     "models": {
       "type": "object",
@@ -110,7 +116,11 @@
             "jira",
             "none"
           ],
-          "default": "none"
+          "default": "none",
+          "x-question": "Where do tickets live? github, linear, jira, or none. Seeds a required integration.",
+          "x-scope": [
+            "project"
+          ]
         }
       }
     },
@@ -161,7 +171,7 @@
     "ship": {
       "type": "object",
       "additionalProperties": false,
-      "description": "How this repository ships. Discovered and asked by flow-adopt; followed by flow-ship.",
+      "description": "How this repository ships. Discovered and asked by flow setup; followed by flow ship.",
       "properties": {
         "verify": {
           "type": "string",
@@ -214,6 +224,11 @@
               "items": {
                 "type": "string"
               }
+            },
+            "draft": {
+              "type": "boolean",
+              "default": true,
+              "x-question": "Open pull requests as drafts, so you mark them ready?"
             }
           }
         },
@@ -262,6 +277,147 @@
           "description": "Folder holding flow-builder.md, flow-judge.md, flow-spec-reviewer.md, flow-architect.md, flow-researcher.md as the project wants them."
         }
       }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-scope": [
+        "user",
+        "project"
+      ],
+      "properties": {
+        "comment": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "post",
+            "off"
+          ],
+          "default": "draft",
+          "x-team": true,
+          "x-question": "After a review: post the findings on the PR as one comment, draft them for you to paste, or keep them in the story file?"
+        },
+        "approve": {
+          "type": "boolean",
+          "default": false,
+          "x-team": true,
+          "x-question": "May Flow State approve a PR when nothing high or medium remains? It counts as your approval; merging is never automated."
+        },
+        "native": {
+          "type": "boolean",
+          "default": true,
+          "x-question": "Run the host tool's own review (/code-review, /security-review, Codex review-agent, Cursor review, Copilot review) beside the judge?"
+        }
+      }
+    },
+    "update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "notify",
+            "never"
+          ],
+          "default": "ask",
+          "x-scope": [
+            "user"
+          ],
+          "x-question": "When a newer Flow State exists: ask before updating, only tell you, or stay silent?"
+        },
+        "source": {
+          "type": "string",
+          "default": "agenticair/flow-state",
+          "x-scope": [
+            "project"
+          ],
+          "x-question": "Which repository holds your team's Flow State? Keep the default unless your company runs its own."
+        }
+      }
+    },
+    "integrations": {
+      "type": "array",
+      "x-scope": [
+        "project"
+      ],
+      "x-question": "Which systems does this loop need (ticket system, chat, analytics, design)? Found ones are proposed; a company's own needs a kind.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "default": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mcp",
+              "cli",
+              "env",
+              "file"
+            ]
+          },
+          "server": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "var": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "conventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-question": "Any Flow State convention this repository should not apply (simplicity, boundaries, testing, ui-states, no-hardcoding, docs-update-law)?"
+        }
+      }
+    },
+    "welcomed": {
+      "type": "string",
+      "x-scope": [
+        "user"
+      ],
+      "description": "The version that welcomed this machine; set by the first run."
     }
   }
 }

@@ -7,7 +7,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import crypto from "node:crypto";
 import { ROOT, listRoleFiles, readRole, readJSON, walkFiles } from "./lib.mjs";
+
+const GROUND_RULES_PATH = path.join(ROOT, "skills", "flow-core", "ground-rules.md");
+export const groundRules = () => fs.readFileSync(GROUND_RULES_PATH, "utf8").replace(/\r\n/g, "\n").trim();
 
 const HOOKS_SPEC = path.join(ROOT, "hooks", "hooks.spec.json");
 const CURSOR_EVENTS = { SessionStart: "sessionStart", PreToolUse: "preToolUse", Stop: "stop" };
@@ -17,9 +21,11 @@ const GENERATED_DIRS = ["agents", "adapters/codex/agents", "adapters/cursor/agen
 const GEMINI_TOOLS = { Read: "read_file", Grep: "grep_search", Glob: "glob", Write: "write_file", Edit: "replace", Bash: "run_shell_command" };
 const COPILOT_TOOLS = { Read: "read", Grep: "search", Glob: "search", Write: "edit", Edit: "edit", Bash: "shell" };
 
-export function render(role) {
+export function render(role, gr = groundRules()) {
   const stamp = `Generated from ${role.source} by tools/build-adapters.mjs. Do not edit; edit the source and run npm run build.`;
   const out = {};
+  const grSection = `## Ground rules\n\n${gr.replace(/^# Ground rules\n+/, "")}\n\n`;
+  role = { ...role, body: grSection + role.body };
 
   // Claude Code (also read by Cursor from .claude/agents/)
   out[`agents/${role.name}.md`] =
@@ -97,6 +103,7 @@ export function renderWeb(root = ROOT) {
     "- Never invent: a missing fact is `[⚠️ Pending: define with <who>]` or `[NEEDS CLARIFICATION: <question>]`.",
     "",
   ];
+  parts.push("# Ground rules", "", groundRules().replace(/^# Ground rules\n+/, ""), "");
   for (const name of WEB_SKILLS) parts.push(`# Stage: ${name}`, "", body(read(`skills/${name}/SKILL.md`)), "");
   parts.push("# Templates", "");
   for (const t of WEB_TEMPLATES) parts.push(`## templates/${t}`, "", "```markdown", read(`skills/flow-core/templates/${t}`), "```", "");
@@ -145,6 +152,16 @@ export function generateAll(root = ROOT) {
   const pkg = readJSON(path.join(root, "package.json"));
   pkg.version = version;
   files["package.json"] = JSON.stringify(pkg, null, 2) + "\n";
+
+  // MANIFEST.json: sha256 of every file under skills/ (relative to skills/), so flow update can tell an edited install from a clean one.
+  const manifest = { version, repository: readJSON(path.join(root, "plugin.json")).repository || "", files: {} };
+  const skillsDir = path.join(root, "skills");
+  for (const p of walkFiles(skillsDir)) {
+    const rel2 = path.relative(skillsDir, p).split(path.sep).join("/");
+    if (rel2 === "flow-core/MANIFEST.json") continue;
+    manifest.files[rel2] = crypto.createHash("sha256").update(fs.readFileSync(p, "utf8").replace(/\r\n/g, "\n")).digest("hex");
+  }
+  files["skills/flow-core/MANIFEST.json"] = JSON.stringify(manifest, null, 2) + "\n";
 
   return files;
 }

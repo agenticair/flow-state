@@ -80,6 +80,8 @@ if (-not $Yes -and -not $DryRun -and -not $Source.StartsWith([System.IO.Path]::G
 
 function Copy-Skills($dest) {
   Run { New-Item -ItemType Directory -Force -Path $dest | Out-Null } "mkdir $dest"
+  $stale = Join-Path $dest "flow-adopt"
+  if (Test-Path $stale) { Run { Remove-Item -Recurse -Force $stale } "rm $stale"; Log "  removed stale $stale (renamed to flow-setup)" }
   Get-ChildItem -Path (Join-Path $Source "skills") -Directory | ForEach-Object {
     $target = Join-Path $dest $_.Name
     Run { if (Test-Path $target) { Remove-Item -Recurse -Force $target }; Copy-Item -Recurse -Path $_.FullName -Destination $target } "copy $target"
@@ -149,7 +151,11 @@ foreach ($t in $Tools) {
 }
 
 if ($Tmp) { Remove-Item -Recurse -Force $Tmp }
-if ($Uninstall) { Log "Uninstalled."; exit 0 }
+if ($Uninstall) { Remove-Item -Force (Join-Path $Home_ ".flow\install.json") -ErrorAction SilentlyContinue; Log "Uninstalled."; exit 0 }
+if (-not $DryRun -and -not $DestRoot) {
+  New-Item -ItemType Directory -Force -Path (Join-Path $Home_ ".flow") | Out-Null
+  @{ source = $Source; version = $Version; scope = $Scope; installedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") } | ConvertTo-Json | Set-Content -Path (Join-Path $Home_ ".flow\install.json")
+}
 $node = Get-Command node -ErrorAction SilentlyContinue
 if ($node) { Log "Node $(& node --version) found: scoring, verdict checks and the step machine will run." }
 else { Log "Node not found: skills work, but scores and verdict checks will be labelled UNVERIFIED. Install Node 20+ to enable them." }

@@ -4,6 +4,23 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-01
+
+### Added
+- Ground rules: `skills/flow-core/ground-rules.md` (ten rules) loaded first by every skill, pasted first into every builder brief and judge package, inlined into every generated agent and the web bundle; `npm run validate` fails on a skill without the loader line.
+- First run: `flow` welcomes a new machine with `templates/welcome.md` and four questions (autonomy, review comment, review approve, update policy), written to `~/.flow/config.json`.
+- `flow list`, `flow size`, `flow update`, `flow <stage>` dispatch; the hub routes by the architect's S/M/L/XL size.
+- Settings: `review.comment` (draft | post | off), `review.approve`, `review.native`, `ship.pr.draft`, `update.policy`, `update.source`, `integrations[]`, `conventions.exclude`, `welcomed`; `x-question`, `x-scope` and `x-team` annotations in the schema; `config.mjs where` and `config.mjs set --scope user|project|personal`; team keys refused in the personal file.
+- `flow connect` checks integrations: a catalog (`integrations.json`: github, jira, linear, slack, figma, amplitude, databricks, sentry, playwright) plus company-declared ones (mcp | cli | env | file), MCP server names read from each tool's config, `--only <name>`, found-but-unregistered suggestions, installed version.
+- `update.mjs` and `MANIFEST.json`: `flow update` compares installed files by sha256, refuses to overwrite edits or run with an open build, routes to the plugin update, the recorded clone, or `npx skills update`; the installers record `~/.flow/install.json`.
+- `flow-review` acts on `review.*`; `flow-ship` opens drafts by default and requires `flow connect --only github` first; `flow-spec` reads tickets only through a connected integration.
+
+### Changed
+- `flow-adopt` is `flow-setup` (`flow setup`, `flow setup refresh`); `flow adopt` is accepted until 0.7; installers and the doctor remove or report the stale folder.
+- Default autonomy is `assisted`.
+- The doctor marks per-tool install rows as optional: an uninstalled tool no longer fails `flow connect`.
+- README: positioning, per-tool connect table, commands table, teach-the-agents.
+
 ## [0.5.0] - 2026-10-01
 
 ### Added

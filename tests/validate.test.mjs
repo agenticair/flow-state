@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { validateAll, validateSkillDir } from "../tools/validate.mjs";
+import { validateAll, validateSkillDir, validateGroundRules } from "../tools/validate.mjs";
 import { parseFrontmatter } from "../tools/lib.mjs";
 
 test("the repository validates", () => {
@@ -34,4 +34,17 @@ test("frontmatter parser handles nested metadata and quoted values", () => {
   assert.equal(data.description, "b: c");
   assert.deepEqual(data.metadata, { version: "1.2.3", stage: "hub" });
   assert.equal(body, "hello\n");
+});
+
+test("every stage skill loads the ground rules first and the manifest matches the version", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "flow-gr-"));
+  fs.cpSync("skills", path.join(root, "skills"), { recursive: true });
+  fs.copyFileSync("plugin.json", path.join(root, "plugin.json"));
+  fs.writeFileSync(path.join(root, "skills", "flow-build", "SKILL.md"), fs.readFileSync("skills/flow-build/SKILL.md", "utf8").replace("Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.\n", ""));
+  const m = JSON.parse(fs.readFileSync(path.join(root, "skills/flow-core/MANIFEST.json"), "utf8"));
+  m.version = "0.0.0";
+  fs.writeFileSync(path.join(root, "skills/flow-core/MANIFEST.json"), JSON.stringify(m));
+  const problems = validateGroundRules(root);
+  assert.ok(problems.some((p) => /flow-build\/SKILL\.md: missing the ground-rules loader line/.test(p)), problems.join("\n"));
+  assert.ok(problems.some((p) => /MANIFEST\.json: version 0\.0\.0/.test(p)), problems.join("\n"));
 });

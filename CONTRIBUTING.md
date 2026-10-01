@@ -8,10 +8,11 @@ Thanks for looking. This repository is prompt content plus a few deterministic s
 2. **Length is paid on every run.** Do not add instructions for exotic cases. The human reviewing the output corrects those when they happen.
 3. **Never invent.** A skill that lacks a fact writes `[⚠️ Pending: define with <who>]` or `[NEEDS CLARIFICATION]`. Never a plausible number, quote or metric.
 4. **Six frontmatter fields only** in any `SKILL.md`: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. This is what keeps one skill loadable in every tool. `name` equals the directory name.
-5. **Edit sources, not outputs.** `agents/` and `adapters/` are generated from `skills/flow-core/roles/*.md`. Run `npm run build` after editing a role and commit the result. CI rejects stale output.
+5. **Edit sources, not outputs.** `agents/`, `adapters/` and `skills/flow-core/MANIFEST.json` are generated from `skills/flow-core/roles/*.md`, `hooks/` and `skills/`. Run `npm run build` after any change under `skills/` and commit the result. CI rejects stale output.
 6. **Tests for scripts, never for prompts.** `node --test` covers `tools/` and `skills/flow-core/scripts/`. Do not write assertions on model output.
 7. **Node 20+ only.** No Python, no npm dependencies. Skills must still work without Node; anything a script would have verified is then labelled `UNVERIFIED`.
-8. **Nothing project-specific.** Your team's conventions belong in your project's `flow.config.json` and `AGENTS.md`, not here. Ship a general mechanism, not your house rule.
+8. **Ground rules are the floor.** `skills/flow-core/ground-rules.md` is read by every agent before anything else. A change there is a change to every stage; keep it short and put it in the changelog.
+9. **Nothing project-specific.** Your team's conventions belong in your project's `flow.config.json` and `AGENTS.md`, not here. Ship a general mechanism, not your house rule.
 
 ## Making a change
 

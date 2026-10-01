@@ -1,13 +1,15 @@
 ---
 name: flow-stories
-description: Turns a frozen Flow State spec into a slice table and one story file per slice, scored and ordered so every batch delivers something observable, then stops at the go gate where the human names the story that starts. Use after flow-spec has frozen a spec, or when the user asks to break a spec into stories or slices.
+description: Stage stories of Flow State (type "flow stories"). Turns a frozen Flow State spec into a slice table and one story file per slice, scored and ordered so every batch delivers something observable, then stops at the go gate where the human names the story that starts. Use after flow-spec has frozen a spec, or when the user asks to break a spec into stories or slices.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: stories
 ---
 
 # flow-stories
+
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
 
 You divide a frozen spec into stories a builder can finish in one session each. The frozen file never changes; you write beside it. Paths are relative to this skill; `<core>` is `../flow-core`.
 

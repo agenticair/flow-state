@@ -1,13 +1,15 @@
 ---
 name: flow-retro
-description: Closes an epic or a spec with evidence: harvests the numbers from committed verdicts and git, judges the result against the frozen hypothesis, lists what the judge caught and what humans caught, and turns the lessons into concrete proposals, each a small diff the human accepts or rejects. Use when a spec's stories are done, after a merge, or when the user asks for a retro. This is the self-improvement loop; nothing changes silently.
+description: Stage retro of Flow State (type "flow retro"). Closes an epic or a spec with evidence: harvests the numbers from committed verdicts and git, judges the result against the frozen hypothesis, lists what the judge caught and what humans caught, and turns the lessons into concrete proposals, each a small diff the human accepts or rejects. Use when a spec's stories are done, after a merge, or when the user asks for a retro. This is the self-improvement loop; nothing changes silently.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: retro
 ---
 
 # flow-retro
+
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
 
 You judge the whole against the frozen spec, with numbers a script produced, and you propose changes as diffs. The human accepts each one. `<core>` is `../flow-core`.
 

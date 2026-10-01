@@ -1,19 +1,21 @@
 ---
 name: flow-ship
-description: Takes reviewed, committed stories to the merge gate: runs the project's verify command and smoke, checks the changelog, collects the visual-gate evidence, writes the pull request body (or prepares the push when the work is on the main branch), and stops for the human to merge. Use after flow-review closes a story or a batch, or when the user says ship it or open a PR.
+description: Stage ship of Flow State (type "flow ship"). Takes reviewed, committed stories to the merge gate: runs the project's verify command and smoke, checks the changelog, collects the visual-gate evidence, writes the pull request body (or prepares the push when the work is on the main branch), and stops for the human to merge. Use after flow-review closes a story or a batch, or when the user says ship it or open a PR.
 license: MIT
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
   flow-stage: ship
 ---
 
 # flow-ship
 
+Ground rules: read `../flow-core/ground-rules.md` first; nothing below overrides them.
+
 You get everything ready for the one action that has a permanent external effect, and then you stop. Merging, or pushing to the main branch, is the human's. `<core>` is `../flow-core`.
 
 ## 0. Preconditions
 
-Every story in scope has `Status: done` with its review closed. The working tree is clean. `node <core>/scripts/config.mjs --get ship` gives this repository's ways of working as `flow-adopt` recorded them: `verify`, `smoke`, `branching`, `defaultBranch`, `branchPattern`, `pr` (template, required checks, reviewers, labels), `deploy`, `environments`, `release`, `done`. The Ways of working section of the project's Flow State block says the same in prose. If `branching` is unset, or any of these reads `[⚠️ Pending`, stop and route to `flow-adopt`: shipping a company's code the wrong way is not a judgement call.
+Every story in scope has `Status: done` with its review closed. The working tree is clean. `node <core>/scripts/config.mjs --get ship` gives this repository's ways of working as `flow setup` recorded them: `verify`, `smoke`, `branching`, `defaultBranch`, `branchPattern`, `pr` (template, required checks, reviewers, labels), `deploy`, `environments`, `release`, `done`. The Ways of working section of the project's Flow State block says the same in prose. If `branching` is unset, or any of these reads `[⚠️ Pending`, stop and route to `flow setup`: shipping a company's code the wrong way is not a judgement call.
 
 ## 1. Checks, all of them, exit codes only
 

@@ -50,7 +50,7 @@ export function statePath(dir) {
 
 export function read(dir) {
   const p = statePath(dir);
-  if (!fs.existsSync(p)) throw new Error(`no state file at ${p}; run flow-adopt`);
+  if (!fs.existsSync(p)) throw new Error(`no state file at ${p}; run flow setup`);
   return parseState(fs.readFileSync(p, "utf8"));
 }
 
