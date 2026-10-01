@@ -430,8 +430,8 @@ function verdict(c, file) {
   const specDir = path.resolve(c.project, run.spec.replace(/\.md$/, ""));
   const vdir = path.join(specDir, "verdicts");
   fs.mkdirSync(vdir, { recursive: true });
-  const storyBase = path.basename(run.story, ".md");
-  const kept = path.join(vdir, `${storyBase}-task-${run.task}${run.attempt > 1 ? `-attempt-${run.attempt}` : ""}.json`);
+  const planBase = path.basename(run.plan).replace(/\.plan\.md$/, "").replace(/\.md$/, "");
+  const kept = path.join(vdir, `${planBase}-task-${run.task}${run.attempt > 1 ? `-attempt-${run.attempt}` : ""}.json`);
   fs.writeFileSync(kept, JSON.stringify(v, null, 2) + "\n");
   run.verdictFile = rel(c, kept);
   run.lastFindings = outcome === "done" ? null : v.findings;
