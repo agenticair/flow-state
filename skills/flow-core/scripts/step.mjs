@@ -124,6 +124,8 @@ export function advance(run, outcome, budget = BUDGET) {
       r.seal = null;
       r.lastFailure = null;
       r.lastFindings = null;
+      r.verdictFiles = [];
+      r.verdictFile = null;
       return r;
     default:
       throw new Error(`impossible transition ${r.step}:${outcome}`);
@@ -319,9 +321,10 @@ export function runControls(c, run) {
   for (const p of run.report.paths) if (!declared.has(p)) problems.push(`scope: reported path not declared in Files: ${p}`);
   const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: c.project, encoding: "utf8" });
   const stateRel = rel(c, c.dir) + "/";
+  const verdictsRel = norm(run.spec.replace(/\.md$/, "")) + "/verdicts/";
   for (const line of status.split("\n").filter(Boolean)) {
     const p = norm(line.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, ""));
-    if (p.startsWith(stateRel)) continue;
+    if (p.startsWith(stateRel) || p.startsWith(verdictsRel)) continue; // the program's own evidence is committed at commit time
     if (!run.report.paths.includes(p)) problems.push(`scope: changed but not reported: ${p}`);
   }
   for (const f of task.files) {
@@ -434,6 +437,7 @@ function verdict(c, file) {
   const kept = path.join(vdir, `${planBase}-task-${run.task}${run.attempt > 1 ? `-attempt-${run.attempt}` : ""}.json`);
   fs.writeFileSync(kept, JSON.stringify(v, null, 2) + "\n");
   run.verdictFile = rel(c, kept);
+  run.verdictFiles = [...(run.verdictFiles || []), rel(c, kept)];
   run.lastFindings = outcome === "done" ? null : v.findings;
   const after = advance(run, outcome);
   writeRun(c, after);
@@ -455,7 +459,7 @@ function commit(c) {
     writeRun(c, run);
     return 5;
   }
-  if (run.verdictFile) git(c, ["add", "--", run.verdictFile]);
+  for (const f of run.verdictFiles || (run.verdictFile ? [run.verdictFile] : [])) git(c, ["add", "--", f]);
   const task = taskOf(run);
   const storyBase = path.basename(run.story, ".md");
   const msg = `${task.name} (${storyBase}, task ${run.task}/${run.tasksTotal})\n\nFlow-State: ${storyBase}#${run.task} verdict ${(run.token || "").slice(0, 12)}`;

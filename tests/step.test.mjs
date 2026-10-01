@@ -222,10 +222,14 @@ test("a full two-task run: brief with repository rules, controls, package with h
   fs.appendFileSync(path.join(dir, "tests/greet.test.mjs"), 'import { shout } from "../src/greet.mjs"\ntest("shout returns HELLO", () => assert.equal(shout(), "HELLO"))\n');
   fs.writeFileSync(path.join(dir, "README.md"), "# t changed\n");
   fs.writeFileSync(path.join(dir, ".agent/run/task-2-report.json"), JSON.stringify({ paths: ["src/greet.mjs", "tests/greet.test.mjs"], summary: "shout" }));
+  fs.mkdirSync(path.join(dir, "docs/specs/x/verdicts"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "docs/specs/x/verdicts/stray-attempt.json"), "{}");
   ok(run(dir, "report", ".agent/run/task-2-report.json"), "report 2");
   const red = run(dir, "controls");
   assert.equal(red.status, 4);
   assert.match(red.stderr, /changed but not reported: README\.md/);
+  assert.doesNotMatch(red.stderr, /verdicts/, "program-written verdict files are not scope violations");
+  fs.rmSync(path.join(dir, "docs/specs/x/verdicts/stray-attempt.json"));
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).attempt, 2);
   g("checkout", "--", "README.md");
   n = run(dir, "next", "--json");
