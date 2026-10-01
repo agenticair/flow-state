@@ -17,11 +17,12 @@ Every story in scope has `Status: done` with its review closed. The working tree
 
 ## 1. Checks, all of them, exit codes only
 
-1. **Verify**: the project's build, lint and test command. Red stops the stage; nothing is pushed on red.
-2. **Smoke**: the project's smoke command if one exists (a production or staging sweep). Report its result; a red smoke is a human decision, not an automatic stop, because it may describe production rather than the change.
-3. **Changelog**: the project's changelog has entries under Unreleased for every story in scope (the docs law). Missing entries go back to `flow-build` as a docs task, never written here by hand.
-4. **Visual gate**: for every story with `Gate: visual`, produce the evidence the human will look at: start the app locally and take a screenshot of the affected screen, or point at the deployed preview. Attach the path or link to the story file. No screenshot, no merge for that story.
-5. **Deferred work**: list what `deferred-work.md` holds for these stories, so the human knows what is not in this merge.
+1. **HEAD is the reviewed commit**: `git rev-parse HEAD` equals the last commit the review closed on (the story's review-close commit, or the last verdict commit when the review added none). Any commit after the review that carries no verdict is unreviewed work: stop and send it through `flow review`. Nothing ships that a judge did not see.
+2. **Verify**: the project's build, lint and test command. Red stops the stage; nothing is pushed on red.
+3. **Smoke**: the project's smoke command if one exists (a production or staging sweep). Report its result; a red smoke is a human decision, not an automatic stop, because it may describe production rather than the change.
+4. **Changelog**: the project's changelog has entries under Unreleased for every story in scope (the docs law). Missing entries go back to `flow-build` as a docs task, never written here by hand.
+5. **Visual gate**: for every story with `Gate: visual`, produce the evidence the human will look at: start the app locally and take a screenshot of the affected screen, or point at the deployed preview. Attach the path or link to the story file. No screenshot, no merge for that story.
+6. **Deferred work**: list what `deferred-work.md` holds for these stories, so the human knows what is not in this merge.
 
 ## 2. The pull request, or the push, the way this repository does it
 

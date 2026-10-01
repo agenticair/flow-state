@@ -167,7 +167,7 @@ function wrongStep(run, wanted) {
 }
 
 // ---------- brief ----------
-export function composeBrief(run, task, spec, story, conventionsText, paths, rules = { text: "", files: [] }) {
+export function composeBrief(run, task, spec, story, conventionsText, paths, rules = { text: "", files: [] }, roleNotes = "") {
   const lines = [];
   lines.push(`# Task ${task.n}/${run.tasksTotal}: ${task.name}`, "");
   lines.push(`Story: ${run.story}`, `Spec: ${run.spec}`, `Attempt: ${run.attempt}`, `Report to: ${paths.report}`, "");
@@ -182,9 +182,25 @@ export function composeBrief(run, task, spec, story, conventionsText, paths, rul
   if (run.lastFindings) lines.push("## Previous attempt: judge findings", "", ...run.lastFindings.map((f) => `- [${f.severity}] ${f.rule} at ${f.path}:${f.line ?? "?"}: ${f.what}`), "");
   lines.push("## Repository rules", "", "These are the rules of the repository you are working in. They win over the Flow State conventions below, rule by rule. A linter that runs in Verification wins over both.", "");
   lines.push(rules.text || "(no repository rule files found)", "");
+  if (roleNotes) lines.push("## Notes this project keeps for the builder", "", roleNotes.trim(), "");
   lines.push("## Flow State conventions", "", "Apply where the repository rules are silent.", "", conventionsText, "");
   lines.push("## Report", "", `When done, write JSON to \`${paths.report}\`:`, "", "```json", '{ "paths": ["<every file you created or modified>"], "summary": "<what changed and why>", "noticed": ["<out-of-scope things you did not touch>"] }', "```", "");
   return lines.join("\n");
+}
+
+// "Teach the agents": a project may keep notes per role under <roles.dir> (default .flow/roles/<role>.md).
+function roleNotesPath(c, role) {
+  let dir = ".flow/roles";
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(c.project, "flow.config.json"), "utf8"));
+    if (cfg?.roles?.dir) dir = cfg.roles.dir;
+  } catch {}
+  const p = path.resolve(c.project, dir, `${role}.md`);
+  return fs.existsSync(p) ? p : null;
+}
+function roleNotes(c, role) {
+  const p = roleNotesPath(c, role);
+  return p ? fs.readFileSync(p, "utf8") : "";
 }
 
 function conventionsText() {
@@ -248,7 +264,7 @@ function next(c) {
       const spec = parseSpec(fs.readFileSync(path.resolve(c.project, run.spec), "utf8"));
       const story = parseStory(fs.readFileSync(path.resolve(c.project, run.story), "utf8"));
       fs.mkdirSync(c.workDir, { recursive: true });
-      fs.writeFileSync(p.brief, composeBrief(run, taskOf(run), spec, story, conventionsText(), { report: rel(c, p.report) }, collectRules(c.project)));
+      fs.writeFileSync(p.brief, composeBrief(run, taskOf(run), spec, story, conventionsText(), { report: rel(c, p.report) }, collectRules(c.project), roleNotes(c, "flow-builder")));
       run.seal = `${run.task}:implement:${run.attempt}`;
       writeRun(c, run);
       out.action = "dispatch flow-builder";
@@ -387,11 +403,13 @@ function pkg(c) {
   const files = git(c, ["diff", "--cached", "--name-status"]);
   const conv = fs.existsSync(CONVENTIONS) ? fs.readdirSync(CONVENTIONS).filter((f) => f.endsWith(".md")).map((f) => `- ${path.join(CONVENTIONS, f)}`) : [];
   const ruleFiles = collectRules(c.project).files.map((f) => `- ${path.resolve(c.project, f)}`);
+  const judgeNotes = roleNotesPath(c, "flow-judge");
   const md = [
     `Review token: ${token}`, "",
     `# Review package: task ${run.task}/${run.tasksTotal} (${taskOf(run).name})`, "",
     "## Brief", "", `- ${p.brief}`, "",
     "## Repository rules (win over conventions, rule by rule; open with Read and cite file and rule)", "", ...(ruleFiles.length ? ruleFiles : ["- none found"]), "",
+    ...(judgeNotes ? ["## Notes this project keeps for the judge (open with Read)", "", `- ${judgeNotes}`, ""] : []),
     "## Flow State conventions (apply where repository rules are silent)", "", ...conv, "",
     "## Control logs (paths only; do not read them to decide, the controls already passed)", "", `- ${p.controls}`, "",
     "## Files changed", "", "```", files, "```", "",

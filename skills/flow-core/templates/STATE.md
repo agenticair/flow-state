@@ -1,5 +1,6 @@
 ---
 feature: none
+size: none
 stage: idle
 gate: none
 spec: none

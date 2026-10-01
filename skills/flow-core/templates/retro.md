@@ -9,6 +9,7 @@ Verdict: <accepted | accepted with open items | rejected>
 **Bet:** <quoted from the spec>
 **Failure signal:** <quoted> — <measured: result | not measured: why>
 **Open items:** <parked stories, pending runners, deferred work that touches the bet>
+**Outcome:** <the spec's Measure run again after the change was live: same query, second date, value then and now; or "not measured: <why>">
 
 ## Numbers
 

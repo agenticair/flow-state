@@ -11,7 +11,8 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE = path.join(here, "..", "templates", "STATE.md");
 
-export const KEYS = ["feature", "stage", "gate", "spec", "last_commit", "blocked", "updated"];
+export const KEYS = ["feature", "size", "stage", "gate", "spec", "last_commit", "blocked", "updated"];
+export const SIZES = ["none", "S", "M", "L", "XL"];
 export const STAGES = ["idle", "spec", "stories", "design", "build", "review", "ship", "retro"];
 export const GATES = ["none", "freeze", "go", "merge"];
 
@@ -38,6 +39,7 @@ export function validateSet(pairs) {
     if (!KEYS.includes(k) || k === "updated") errors.push(`unknown or reserved key: ${k}`);
     if (k === "stage" && !STAGES.includes(v)) errors.push(`stage must be one of ${STAGES.join(", ")}`);
     if (k === "gate" && !GATES.includes(v)) errors.push(`gate must be one of ${GATES.join(", ")}`);
+    if (k === "size" && !SIZES.includes(v)) errors.push(`size must be one of ${SIZES.join(", ")}`);
   }
   return errors;
 }

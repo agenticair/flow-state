@@ -24,6 +24,7 @@ export const DEFAULTS = Object.freeze({
   rules: { include: [], exclude: [], maxBytes: "32768" },
   ship: { verify: "", smoke: "", defaultBranch: "main", branchPattern: "", pr: { template: "", requiredChecks: [], reviewers: [], labels: [] }, deploy: "", environments: [], release: "", done: [] },
   design: { doc: "" },
+  roles: { dir: ".flow/roles" },
   language: "en",
 });
 

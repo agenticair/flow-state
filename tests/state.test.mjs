@@ -35,6 +35,8 @@ test("invalid stage, gate, unknown and reserved keys are rejected", () => {
   assert.deepEqual(validateSet({ stage: "build" }), []);
   assert.match(validateSet({ stage: "flying" }).join(), /stage must be/);
   assert.match(validateSet({ gate: "maybe" }).join(), /gate must be/);
+  assert.deepEqual(validateSet({ size: "M" }), []);
+  assert.match(validateSet({ size: "XS" }).join(), /size must be/);
   assert.match(validateSet({ colour: "red" }).join(), /unknown/);
   assert.match(validateSet({ updated: "x" }).join(), /reserved/);
 });

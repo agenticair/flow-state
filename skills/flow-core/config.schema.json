@@ -250,6 +250,18 @@
           "description": "Path to the project's design system document that flow-design treats as law."
         }
       }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Teach the agents: per-role notes this project keeps, appended to the builder's brief and handed to the judge, the spec reviewer and the architect by path.",
+      "properties": {
+        "dir": {
+          "type": "string",
+          "default": ".flow/roles",
+          "description": "Folder holding flow-builder.md, flow-judge.md, flow-spec-reviewer.md, flow-architect.md, flow-researcher.md as the project wants them."
+        }
+      }
     }
   }
 }

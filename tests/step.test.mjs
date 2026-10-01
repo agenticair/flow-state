@@ -114,6 +114,9 @@ function project() {
   fs.writeFileSync(path.join(dir, "docs/specs/x/plans/01-hello.plan.md".replace("plans/", "")), PLAN);
   fs.writeFileSync(path.join(dir, "README.md"), "# t\n");
   fs.writeFileSync(path.join(dir, "AGENTS.md"), "# House rules\n\n- Never use semicolons.\n");
+  fs.mkdirSync(path.join(dir, ".flow/roles"), { recursive: true });
+  fs.writeFileSync(path.join(dir, ".flow/roles/flow-builder.md"), "Prefer named exports in this codebase.\n");
+  fs.writeFileSync(path.join(dir, ".flow/roles/flow-judge.md"), "Our judge cares about named exports.\n");
   fs.writeFileSync(path.join(dir, ".gitignore"), ".agent/\n");
   g("add", "-A");
   g("commit", "-q", "-m", "base");
@@ -192,6 +195,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   assert.match(brief, /## Closed decisions\n\n- D-1 greet is a pure function/);
   assert.match(brief, /Anti-scope: no shouting in production/);
   assert.match(brief, /## Flow State conventions[\s\S]*conventions\/testing\.md/);
+  assert.match(brief, /## Notes this project keeps for the builder\n\nPrefer named exports/);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).seal, "1:implement:1");
 
   fs.writeFileSync(path.join(dir, "src/greet.mjs"), 'export const greet = () => "hello"\n');
@@ -203,6 +207,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   const pkg = fs.readFileSync(path.join(dir, ".agent/run/task-1-package.md"), "utf8");
   assert.match(pkg, /^Review token: [0-9a-f]{64}/);
   assert.match(pkg, /## Repository rules[\s\S]*AGENTS\.md/);
+  assert.match(pkg, /## Notes this project keeps for the judge[\s\S]*\.flow\/roles\/flow-judge\.md/);
   assert.match(pkg, /\+export const greet/);
   n = run(dir, "next", "--json");
   out = JSON.parse(n.stdout);

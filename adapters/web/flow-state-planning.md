@@ -262,6 +262,7 @@ Ticket: <url, key, or none>
 
 **Bet:** <what we believe will be true for whom once this ships, in one sentence>
 **We would know it failed if:** <an observable signal, with how it is measured, or [⚠️ Pending: define with <who>]>
+**Measure:** <the exact query or command that produces the signal, where it runs, and its value today with the date; the retro runs the same measure after the change is live, or [⚠️ Pending: define with <who>]>
 **Anti-scope:** <what this deliberately does not do, so no builder adds it>
 
 ## Frozen decisions

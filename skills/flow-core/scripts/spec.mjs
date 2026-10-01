@@ -48,6 +48,7 @@ export function parseSpec(input) {
     header,
     bet: field("Bet"),
     failure: field("We would know it failed if"),
+    measure: field("Measure"),
     antiScope: field("Anti-scope"),
     decisions,
     parked,
@@ -99,6 +100,7 @@ export function summary(spec) {
   const lines = [];
   lines.push(`Bet: ${spec.bet || "(empty)"}`);
   lines.push(`Fails if: ${spec.failure || "(empty)"}`);
+  if (spec.measure && !unfilled(spec.measure)) lines.push(`Measure: ${spec.measure}`);
   lines.push(`Anti-scope: ${spec.antiScope || "(empty)"}`);
   for (const d of spec.decisions.filter((d) => !unfilled(d.decision))) lines.push(`${d.id} ${d.decision} [${d.tag || "UNTAGGED"}]`);
   return lines;
