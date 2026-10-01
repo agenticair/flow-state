@@ -72,3 +72,14 @@ test("hooks render in the three dialects from one spec", () => {
   assert.equal(cursor.hooks.sessionStart[0].matcher, undefined);
   assert.match(cursor.hooks.preToolUse[0].command, /--tool cursor$/);
 });
+
+test("the web bundle carries the planning stages, templates and conventions", () => {
+  const files = generateAll();
+  const bundle = files["adapters/web/flow-state-planning.md"];
+  assert.match(bundle, /^# Flow State \d+\.\d+\.\d+ — planning bundle/);
+  for (const stage of ["flow", "flow-spec", "flow-stories", "flow-design"]) assert.match(bundle, new RegExp(`^# Stage: ${stage}$`, "m"));
+  assert.match(bundle, /## templates\/spec\.md/);
+  assert.match(bundle, /UNVERIFIED \(web\)/);
+  assert.doesNotMatch(bundle, /^---\nname: flow/m, "frontmatter is stripped");
+  assert.match(files["adapters/web/INSTRUCTIONS.md"], /PASTE BOUNDARY/);
+});

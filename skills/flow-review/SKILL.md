@@ -3,7 +3,7 @@ name: flow-review
 description: Reviews a story's finished diff, a branch, or a pull request with the judge agent plus the host tool's native review and any project lenses, grades every finding in the parent session, and routes each to patch, defer or spec. Use after flow-build delivers, when the user says review this, or before opening a pull request.
 license: MIT
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   flow-stage: review
 ---
 
@@ -41,7 +41,7 @@ Write `### Review Findings` into the story file: one line per finding with grade
 
 ## 5. Close
 
-If nothing is high or medium after routing: story `Status: done`, `node <core>/scripts/state.mjs set stage=ship`, and hand to `flow-ship` (v0.4; until then, the human opens the PR). Otherwise back to `flow-build` for the patch tasks.
+If nothing is high or medium after routing: story `Status: done`, `node <core>/scripts/state.mjs set stage=ship`, and hand to `flow-ship`. Otherwise back to `flow-build` for the patch tasks. Review one story at a time; a combined review of several stories hides which story a finding belongs to.
 
 ## Never
 

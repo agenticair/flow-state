@@ -173,7 +173,10 @@ test("rules.mjs collects AGENTS.md and CLAUDE.md imports and respects exclude", 
 
 test("a full two-task run: brief with repository rules, controls, package with hash, verdict, sealed commit, delivered", () => {
   const { dir, g } = project();
-  ok(run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", "--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md"), "init");
+  fs.writeFileSync(path.join(dir, "scratch.txt"), "already dirty before the run\n");
+  const initRes = run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", "--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md");
+  ok(initRes, "init");
+  assert.match(initRes.stdout, /1 path\(s\) already dirty/);
   assert.equal(run(dir, "controls").status, 9, "wrong step exits 9");
 
   // task 1
@@ -257,5 +260,5 @@ test("a full two-task run: brief with repository rules, controls, package with h
   ok(done, "commit 2");
   assert.match(done.stdout, /delivered/);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).step, "delivered");
-  assert.equal(g("status", "--porcelain").trim(), "");
+  assert.equal(g("status", "--porcelain").trim(), "?? scratch.txt", "the pre-existing dirty file was neither committed nor flagged");
 });

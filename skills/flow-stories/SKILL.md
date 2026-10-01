@@ -3,7 +3,7 @@ name: flow-stories
 description: Turns a frozen Flow State spec into a slice table and one story file per slice, scored and ordered so every batch delivers something observable, then stops at the go gate where the human names the story that starts. Use after flow-spec has frozen a spec, or when the user asks to break a spec into stories or slices.
 license: MIT
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   flow-stage: stories
 ---
 

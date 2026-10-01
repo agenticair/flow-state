@@ -226,13 +226,15 @@ function init(c, argv) {
     console.error("not a git repository, or no commits yet");
     return 8;
   }
+  const baselineDirty = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd: c.project, encoding: "utf8" })
+    .split("\n").filter(Boolean).map((l) => norm(l.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, "")));
   const run = {
-    plan, story, spec, base, tasks, task: 1, tasksTotal: tasks.length, step: "implement", attempt: 1,
+    plan, story, spec, base, baselineDirty, tasks, task: 1, tasksTotal: tasks.length, step: "implement", attempt: 1,
     retries: { controls: 0, judge: 0 }, seal: null, sealedTree: null, token: null, report: null, lastFailure: null, lastFindings: null,
     blocked: null, commits: [], notes: [], started: new Date().toISOString(),
   };
   writeRun(c, run);
-  console.log(`run initialised: ${tasks.length} task(s) from ${plan}; base ${base.slice(0, 12)}`);
+  console.log(`run initialised: ${tasks.length} task(s) from ${plan}; base ${base.slice(0, 12)}${baselineDirty.length ? `; ${baselineDirty.length} path(s) already dirty, ignored by the scope control unless a task reports them` : ""}`);
   return 0;
 }
 
@@ -325,6 +327,7 @@ export function runControls(c, run) {
   for (const line of status.split("\n").filter(Boolean)) {
     const p = norm(line.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, ""));
     if (p.startsWith(stateRel) || p.startsWith(verdictsRel)) continue; // the program's own evidence is committed at commit time
+    if ((run.baselineDirty || []).includes(p) && !run.report.paths.includes(p)) continue; // dirty before the run started; not this task's
     if (!run.report.paths.includes(p)) problems.push(`scope: changed but not reported: ${p}`);
   }
   for (const f of task.files) {

@@ -76,10 +76,61 @@ function uniq(a) {
   return [...new Set(a)];
 }
 
+// Web bundle: the planning stages as one Markdown file for ChatGPT GPTs, Claude Projects and Gemini Gems (no filesystem, no scripts).
+const WEB_SKILLS = ["flow", "flow-spec", "flow-stories", "flow-design"];
+const WEB_TEMPLATES = ["spec.md", "stories.md", "story.md", "screen.md"];
+export function renderWeb(root = ROOT) {
+  const read = (p) => fs.readFileSync(path.join(root, p), "utf8").replace(/\r\n/g, "\n").trim();
+  const version = readJSON(path.join(root, "plugin.json")).version;
+  const body = (text) => text.replace(/^---\n[\s\S]*?\n---\n/, "").trim();
+  const parts = [
+    `# Flow State ${version} — planning bundle for web chats`,
+    "",
+    "This file carries the planning stages of Flow State (hub, spec, stories, design) for a chat without a filesystem: a ChatGPT GPT, a Claude Project, a Gemini Gem. Read it in full on the first message.",
+    "",
+    "## How this differs from the coding-tool version",
+    "",
+    "- There is no repository to investigate: ask the human for the files or facts a stage would otherwise read, and say when a question could be answered by looking at the repo.",
+    "- There are no scripts: every score is computed by hand and labelled `UNVERIFIED (web)`; the freeze is the human's word, recorded in the spec text.",
+    "- Every artifact (spec, slice table, story, screen) is written in full in the chat, under its file path as a heading, so the human can paste it into the repository at that path and continue in any coding tool.",
+    "- The gates are the same: freeze (spec), go (first story), merge (never here). Never proceed past a gate without the human's word.",
+    "- Never invent: a missing fact is `[⚠️ Pending: define with <who>]` or `[NEEDS CLARIFICATION: <question>]`.",
+    "",
+  ];
+  for (const name of WEB_SKILLS) parts.push(`# Stage: ${name}`, "", body(read(`skills/${name}/SKILL.md`)), "");
+  parts.push("# Templates", "");
+  for (const t of WEB_TEMPLATES) parts.push(`## templates/${t}`, "", "```markdown", read(`skills/flow-core/templates/${t}`), "```", "");
+  parts.push("# Conventions (apply where the repository's own rules are silent)", "");
+  for (const f of fs.readdirSync(path.join(root, "skills/flow-core/conventions")).filter((f) => f.endsWith(".md")).sort()) parts.push(body(read(`skills/flow-core/conventions/${f}`)), "");
+  const bundle = parts.join("\n");
+  const instructions = `# Flow State planning bundle — setup
+
+## ChatGPT (Custom GPT)
+1. Create a GPT named "Flow State planner". Under Configure, upload \`flow-state-planning.md\` as Knowledge.
+2. Paste the block below the PASTE BOUNDARY into Instructions. Save.
+
+## Claude (Project)
+1. Create a Project named "Flow State planner". Add \`flow-state-planning.md\` to its knowledge.
+2. Paste the block below the PASTE BOUNDARY into the project instructions.
+
+## Gemini (Gem)
+1. Create a Gem named "Flow State planner". Upload \`flow-state-planning.md\` as a knowledge file.
+2. Paste the block below the PASTE BOUNDARY into the instructions box. Save.
+
+Afterwards, paste each artifact the planner writes into your repository at the path it names, and continue with \`flow\` in your coding tool.
+
+═══════════════ PASTE BOUNDARY: everything below goes into Instructions ═══════════════
+
+You are the Flow State planner (version ${version}). Your protocol is the knowledge file flow-state-planning.md: read it in full on the first message, then act as its "flow" stage: size the ask, route to spec, stories or design, and run that stage exactly as written. Write every artifact in full under its file path. Stop at every gate (freeze, go) and wait for the human's word. Never invent a fact, a metric or a quote; mark gaps as the protocol says. Label every score UNVERIFIED (web). Keep answers short between artifacts.
+`;
+  return { "adapters/web/flow-state-planning.md": bundle + "\n", "adapters/web/INSTRUCTIONS.md": instructions };
+}
+
 export function generateAll(root = ROOT) {
   const files = {};
   for (const file of listRoleFiles(root)) Object.assign(files, render(readRole(file)));
   Object.assign(files, renderHooks(readJSON(HOOKS_SPEC)));
+  Object.assign(files, renderWeb(root));
 
   const version = readJSON(path.join(root, "plugin.json")).version;
   const claude = readJSON(path.join(root, ".claude-plugin/plugin.json"));

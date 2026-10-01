@@ -30,7 +30,7 @@ skills/           the workflow; each dir is one Agent Skill
 skills/flow-core/ shared runtime: roles, conventions, templates, scripts, config schema
 hooks/            hook scripts (Node) + hooks.spec.json (source); hooks.json is generated
 agents/           generated: Claude Code agent files
-adapters/         generated: codex, cursor, copilot, gemini agent files and codex/cursor hooks.json
+adapters/         generated: codex, cursor, copilot, gemini agent files, codex/cursor hooks.json, and the web planning bundle
 tools/            maintainer scripts: build-adapters, validate
 install.sh / install.ps1   user installers
 ```

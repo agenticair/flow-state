@@ -4,7 +4,7 @@ A portable idea-to-merge workflow for coding agents. Spec, freeze, stories, buil
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.3.0.** Installed: the `flow` hub with `help`, `status`, `settings`, `next` and `run`; `flow-adopt`; `flow-spec` with the freeze gate; `flow-stories` with the go gate; `flow-build` (the builder/judge loop driven by a step machine); `flow-review`; the four agent roles; conventions; repository-rules collection; the state file; four hooks (Claude Code, Codex, Cursor). Coming: `flow-design`, `flow-ship`, `flow-retro` (v0.4). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
+> **Status: v0.4.0.** Every stage is installed: the `flow` hub (`help`, `status`, `settings`, `next`, `run`), `flow-adopt`, `flow-spec` (freeze gate), `flow-stories` (go gate), `flow-design`, `flow-build` (builder/judge loop on a step machine), `flow-review`, `flow-ship` (merge gate), `flow-retro` (harvested numbers, proposals as diffs); four agent roles; conventions; repository-rules collection; the state file; four hooks (Claude Code, Codex, Cursor); a web planning bundle in `adapters/web/`. Not yet done before a public announcement: see the [ready-to-share checklist](https://github.com/agenticair/flow-state/issues/5). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
 
 ## Why
 
@@ -78,15 +78,15 @@ The spec file gets `Status: FROZEN` and a date. A hook denies any edit to it fro
 | Cursor | `.agents/skills/` | `.cursor/agents/*.md`, judge marked `readonly` | A |
 | GitHub Copilot CLI | `.agents/skills/` | `.github/agents/*.agent.md` | A (adapter experimental) |
 | Gemini CLI | `.agents/skills/` | `.gemini/agents/*.md` (Gemini subagents are experimental) | A (adapter experimental) |
-| Antigravity, Devin, OpenCode, Amp, others | `.agents/skills/` | roles run by instruction in the main session | B |
-| ChatGPT, Claude.ai, Gemini web | planning bundle (v0.3) | none | C |
+| Antigravity (`.agent/skills/`), Devin, OpenCode, Amp, others | `.agents/skills/` via `npx skills add` | roles run by instruction in the main session | B |
+| ChatGPT, Claude.ai, Gemini web | `adapters/web/flow-state-planning.md` plus `INSTRUCTIONS.md` | none | C |
 
 **A**: real subagents with different tools, so the writer/judge separation is enforced by the tool. **B**: the same skills and scripts, separation by instruction only; the diff hash and verdict validation still run. **C**: brief, spec, stories and design only; paste the output into your repo and continue in any coding tool.
 
 ## The flow
 
 ```
-Brief → Spec ─[freeze]→ Stories ─[go]→ Design? → Build → Review → Ship ─[merge]→ Docs → Retro
+Brief → Spec ─[freeze]→ Stories ─[go]→ Design? → Build → Review → Ship ─[merge]→ Retro
 ```
 
 Three human gates: **freeze** the spec, **go** on a story, **merge** the PR. Everything else is a checkpoint you can tighten or loosen in `flow.config.json` (`autonomy: gated | assisted | auto`). Freeze and merge are never automated.

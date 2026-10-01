@@ -4,6 +4,20 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
+### Added
+- `flow-design`: screen inventory per UI story (reference in the project's design system, components, four states with copy, deviation log); never invents a visual language.
+- `flow-ship`: verify, smoke, changelog check, visual-gate evidence, PR body or push summary, then the merge gate.
+- `flow-retro`: `harvest.mjs` reads committed verdicts, git trailers and story statuses; the retro judges the result against the frozen hypothesis and proposes changes as diffs at project level and flow level (issues labelled `retro`).
+- Web planning bundle: `adapters/web/flow-state-planning.md` and `INSTRUCTIONS.md` for ChatGPT GPTs, Claude Projects and Gemini Gems, generated from the same skills.
+- Config: `ship.verify`, `ship.smoke`, `design.doc`.
+
+### Changed (from the first real run's retro)
+- `step.mjs init` records files that were already dirty; the scope control ignores them unless a task reports them.
+- Build plans must end with a docs task when the project's docs law applies, must not use repository-wide commands that already fail outside the task as predicates, and treat documentation TDD phrases as claims the judge checks against the code.
+- Review one story at a time.
+
 ## [0.3.0] - 2026-09-29
 
 ### Added

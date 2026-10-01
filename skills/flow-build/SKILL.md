@@ -3,7 +3,7 @@ name: flow-build
 description: Builds one story (or one one-session change) through a program-driven loop: a plan with declared files and tests, a builder agent that cannot certify, controls the program runs, a judge agent that cannot execute, a schema-checked verdict tied to the exact diff, and a commit of the sealed tree. Use after the go gate, when the flow hub routes one-session work here, or when the user asks to build, implement or code a story.
 license: MIT
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   flow-stage: build
 ---
 
@@ -27,7 +27,10 @@ Write `<spec-without-.md>/plans/<nn>-<slug>.plan.md` from `<core>/templates/plan
 - **Files** lists every path a task may touch, marked `create` or `modify`; the controls reject anything else, so a forgotten test file fails the task;
 - **TDD** is the exact name of the test the builder writes first;
 - **Verification** is shell that exits 0 when the task holds (the project's test runner, lint, a grep), never a description;
-- the first task usually creates the failing test and the smallest slice of behaviour; refactors are separate tasks or parked.
+- the first task usually creates the failing test and the smallest slice of behaviour; refactors are separate tasks or parked;
+- **a docs task last** whenever the project's docs law applies (a changelog, a decisions entry): the judge treats a missing entry as a finding, so plan it rather than patch it;
+- **Verification runs only what the task can make green.** A repository-wide lint or test that already fails on files outside the task is not a predicate; scope the command to the files in scope and record why in the plan;
+- for a documentation task, **TDD** is the exact phrase the document must contain and Verification is a grep; the judge still checks every claim against the code, so write what is true at HEAD, not what the story planned.
 
 For one-session work without a story, write a story file first from `<core>/templates/story.md` with the intent as Delivers and the accepts you can verify; it lives under `docs/specs/adhoc/stories/`.
 

@@ -22,6 +22,8 @@ export const DEFAULTS = Object.freeze({
   ticket: { source: "none" },
   retro: { apply: "propose" },
   rules: { include: [], exclude: [], maxBytes: "32768" },
+  ship: { verify: "", smoke: "" },
+  design: { doc: "" },
   language: "en",
 });
 

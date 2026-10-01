@@ -157,6 +157,30 @@
           "description": "Budget for pasted rules, as a string number. Default 32768."
         }
       }
+    },
+    "ship": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verify": {
+          "type": "string",
+          "description": "Build, lint and test command run by flow-ship before the merge gate."
+        },
+        "smoke": {
+          "type": "string",
+          "description": "Optional production or staging smoke command."
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "doc": {
+          "type": "string",
+          "description": "Path to the project's design system document that flow-design treats as law."
+        }
+      }
     }
   }
 }
