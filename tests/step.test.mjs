@@ -106,6 +106,9 @@ function project() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "flow-run-"));
   const g = (...a) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...a], { cwd: dir, encoding: "utf8" });
   g("init", "-q", "-b", "main");
+  g("config", "user.name", "t");
+  g("config", "user.email", "t@t");
+  g("config", "core.autocrlf", "false");
   fs.mkdirSync(path.join(dir, "docs/specs/x/stories"), { recursive: true });
   fs.mkdirSync(path.join(dir, "src"));
   fs.mkdirSync(path.join(dir, "tests"));
@@ -210,7 +213,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   assert.match(pkg, /^Review token: [0-9a-f]{64}/);
   assert.match(pkg, /## Ground rules \(not overridable; open with Read\)\n\n- .*ground-rules\.md/);
   assert.match(pkg, /## Repository rules[\s\S]*AGENTS\.md/);
-  assert.match(pkg, /## Notes this project keeps for the judge[\s\S]*\.flow\/roles\/flow-judge\.md/);
+  assert.match(pkg, /## Notes this project keeps for the judge[\s\S]*\.flow[\\/]roles[\\/]flow-judge\.md/);
   assert.match(pkg, /\+export const greet/);
   n = run(dir, "next", "--json");
   out = JSON.parse(n.stdout);
