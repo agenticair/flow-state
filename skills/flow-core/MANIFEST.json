@@ -26,7 +26,7 @@
     "flow-core/scripts/score_story.mjs": "d45d1bc4bcd6eb14cb6cedca9f0cb5ee15385345fa445aa3f581d63ca8c73f99",
     "flow-core/scripts/spec.mjs": "7361c59bf8d05814d0915f832b24f99312574fb3b0021612b45808221fe13962",
     "flow-core/scripts/state.mjs": "51b34d64ee57326078e5f14e920bec47e627eb6646293a801bba1a9a201af95d",
-    "flow-core/scripts/step.mjs": "4e8902e036ff9bdc227d5f4aa890144b1638d6c80863c84fedeb74407bc8a67d",
+    "flow-core/scripts/step.mjs": "752b4ef24d20edb192d5175b333c351079ffcf99d8aa77a2ce82f76550060faa",
     "flow-core/scripts/update.mjs": "b1683f1a273083f269f95692a60110ef4297e686af5daac74ad50aa9c6e11b06",
     "flow-core/scripts/verdict.mjs": "e39cb1f3d98a03f6138da563c2053c3600e4d3e107e27babb6a26a01a992756c",
     "flow-core/templates/STATE.md": "2ea951ac7990a82ab5dc4dcef31f8e85d900e00fee93c6ddd019dc6cd3de08d6",
