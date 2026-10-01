@@ -135,7 +135,11 @@
             "pr",
             "auto"
           ],
-          "default": "propose"
+          "default": "propose",
+          "x-team": true,
+          "x-scope": [
+            "project"
+          ]
         }
       }
     },
@@ -175,11 +179,19 @@
       "properties": {
         "verify": {
           "type": "string",
-          "description": "Build, lint and test command run before the merge gate."
+          "description": "Build, lint and test command run before the merge gate.",
+          "x-team": true,
+          "x-scope": [
+            "project"
+          ]
         },
         "smoke": {
           "type": "string",
-          "description": "Optional production or staging smoke command."
+          "description": "Optional production or staging smoke command.",
+          "x-team": true,
+          "x-scope": [
+            "project"
+          ]
         },
         "branching": {
           "type": "string",
@@ -295,13 +307,15 @@
           ],
           "default": "draft",
           "x-team": true,
-          "x-question": "After a review: post the findings on the PR as one comment, draft them for you to paste, or keep them in the story file?"
+          "x-question": "After a review: post the findings on the PR as one comment, draft them for you to paste, or keep them in the story file?",
+          "description": "Team-owned: only flow.config.json sets it; the machine file's value is the default flow setup proposes."
         },
         "approve": {
           "type": "boolean",
           "default": false,
           "x-team": true,
-          "x-question": "May Flow State approve a PR when nothing high or medium remains? It counts as your approval; merging is never automated."
+          "x-question": "May Flow State approve a PR when nothing high or medium remains? It counts as your approval; merging is never automated.",
+          "description": "Team-owned: only flow.config.json sets it; the machine file's value is the default flow setup proposes."
         },
         "native": {
           "type": "boolean",
@@ -376,7 +390,8 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Ignored for integrations declared here: flow connect tests a declared cli for presence only (it never runs a command from a config file with arguments). Arguments run only for the shipped catalog."
           },
           "var": {
             "type": "string"

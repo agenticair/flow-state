@@ -32,6 +32,16 @@
           }
         ],
         "matcher": "Task|Agent"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-push.mjs\"",
+            "timeout": 5
+          }
+        ],
+        "matcher": "Bash|Shell|run_shell_command"
       }
     ],
     "Stop": [

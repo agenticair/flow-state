@@ -30,13 +30,14 @@ test("defaults are assisted, draft comments, no approve, ask for updates, drafts
 test("the machine file sits under the team file, which sits under the personal file", () =>
   withHome((home) => {
     const project = tmp("flow-cfg-");
-    fs.writeFileSync(path.join(home, "config.json"), JSON.stringify({ autonomy: "gated", review: { comment: "post" }, update: { policy: "notify" } }));
-    fs.writeFileSync(path.join(project, "flow.config.json"), JSON.stringify({ autonomy: "auto", review: { comment: "off" } }));
+    fs.writeFileSync(path.join(home, "config.json"), JSON.stringify({ autonomy: "gated", review: { native: false }, update: { policy: "notify" } }));
+    fs.writeFileSync(path.join(project, "flow.config.json"), JSON.stringify({ autonomy: "auto", review: { comment: "off", native: true } }));
     fs.writeFileSync(path.join(project, "flow.config.user.json"), JSON.stringify({ autonomy: "assisted" }));
     const r = load(project);
     assert.deepEqual(r.errors, []);
     assert.equal(r.config.autonomy, "assisted", "personal wins");
-    assert.equal(r.config.review.comment, "off", "team beats machine");
+    assert.equal(r.config.review.native, true, "team beats machine");
+    assert.equal(r.config.review.comment, "off");
     assert.equal(r.config.update.policy, "notify", "machine beats defaults");
     assert.equal(r.config.review.approve, false, "untouched keys keep defaults");
   }));
@@ -44,12 +45,25 @@ test("the machine file sits under the team file, which sits under the personal f
 test("x-team keys are refused in the personal file and listed from the schema", () =>
   withHome(() => {
     const schema = JSON.parse(fs.readFileSync("skills/flow-core/config.schema.json", "utf8"));
-    assert.deepEqual(teamKeys(schema).sort(), ["review.approve", "review.comment"]);
+    assert.deepEqual(teamKeys(schema).sort(), ["retro.apply", "review.approve", "review.comment", "ship.smoke", "ship.verify"]);
     const project = tmp("flow-cfg-");
     fs.writeFileSync(path.join(project, "flow.config.user.json"), JSON.stringify({ review: { approve: true } }));
     const r = load(project);
     assert.ok(r.errors.some((e) => /review\.approve: a team setting/.test(e)), r.errors.join("; "));
     assert.throws(() => set(project, "personal", { "review.comment": "post" }), /team setting/);
+    assert.throws(() => set(project, "personal", { "ship.verify": "true" }), /team setting/);
+  }));
+
+test("x-team keys in the machine file never reach the merged config; where exposes them as machineDefaults", () =>
+  withHome((home) => {
+    const project = tmp("flow-cfg-");
+    fs.writeFileSync(path.join(home, "config.json"), JSON.stringify({ review: { approve: true, comment: "post" } }));
+    fs.writeFileSync(path.join(project, "flow.config.json"), JSON.stringify({ autonomy: "gated" }));
+    const r = load(project);
+    assert.deepEqual(r.errors, []);
+    assert.equal(r.config.review.approve, false, "the team file is silent, so the default holds");
+    assert.equal(r.config.review.comment, "draft");
+    assert.deepEqual(where(project).machineDefaults, { "review.approve": true, "review.comment": "post" });
   }));
 
 test("set --scope writes one layer, coerces booleans, and where reports the first run", () =>

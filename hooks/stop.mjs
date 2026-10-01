@@ -20,7 +20,10 @@ export function check(project) {
   return `HEAD is ${ahead} commit(s) past last_commit in .agent/STATE.md. Before stopping, record where the work is: node <flow-core>/scripts/state.mjs set last_commit=${head.slice(0, 12)} stage=<stage> and add a note. Then stop.`;
 }
 
-const input = readInput();
+let input = {};
+try {
+  input = readInput();
+} catch {}
 const tool = toolFromArgv();
 const reason = check(projectDir(input));
 if (reason) {

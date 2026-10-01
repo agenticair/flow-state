@@ -3,7 +3,7 @@ name: flow-setup
 description: Stage setup of Flow State (type "flow setup"). Sets a repository up once, and refreshes it later with "flow setup refresh". Discovers the repo's own rules and how it ships, asks only what it cannot discover, writes flow.config.json, .agent/STATE.md and a verified block in AGENTS.md or CLAUDE.md, registers review lenses and integrations. Never rewrites existing documentation. ("flow adopt" is accepted as an alias until 0.7.)
 license: MIT
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   flow-stage: setup
 ---
 
@@ -22,8 +22,8 @@ Plug, then learn. The flow is not plug-and-play for a company's way of working; 
 Read, and keep notes with `path:line`:
 
 - **Rules for agents**: `node <core>/scripts/rules.mjs --list` (AGENTS.md, CLAUDE.md and imports, `.claude/rules`, `.cursor/rules`, Copilot instructions, GEMINI.md, CONTRIBUTING.md, the PR template, CODEOWNERS).
-- **How this repository ships**: `.github/workflows/*` or other CI files (what runs, on which branches, what must be green); `.github/PULL_REQUEST_TEMPLATE.md`; `CODEOWNERS`; branch names (`git branch -r`), whether the default branch is protected (`gh api repos/{owner}/{repo}/branches/<default>/protection` when `gh` is signed in; 404 means unprotected); release files (`CHANGELOG.md`, tags, `package.json` version, a release workflow); deploy configuration (`railway.json`, `vercel.json`, Dockerfiles, `fly.toml`, deploy workflows); environments named in config or docs.
-- **How it is built and tested**: `package.json` scripts or the equivalent; lint, typecheck, test, e2e; whether any of them fails at HEAD (run them once; a command that already fails is not a verification predicate).
+- **How this repository ships**: `.github/workflows/*` or other CI files (what runs, on which branches, what must be green); `.github/PULL_REQUEST_TEMPLATE.md`; `CODEOWNERS`; branch names (`git branch -r`), whether the default branch is protected (`gh api repos/{owner}/{repo}/branches/<default>/protection` and `gh api repos/{owner}/{repo}/rules/branches/<default>` when `gh` is signed in; a non-empty rules array means protected; a 403, or a 404 from a non-admin, is unknown and becomes a question in step 2, never a discovered default); release files (`CHANGELOG.md`, tags, `package.json` version, a release workflow); deploy configuration (`railway.json`, `vercel.json`, Dockerfiles, `fly.toml`, deploy workflows); environments named in config or docs.
+- **How it is built and tested**: `package.json` scripts or the equivalent; lint, typecheck, test, e2e; whether lint, typecheck and unit tests fail at HEAD (run only those once; a command that already fails is not a verification predicate). E2e, smoke and any script that references an env var or a URL are listed as "not run" and asked in step 2.
 - **Integrations in use**: the `found but not registered` line from the doctor; `.env.example` variable names (names only); `secrets.*` in CI files; the ticket system named in the PR template or CONTRIBUTING.
 - **Docs family**: `numbered` (`docs/01_*.md`), `flat` (root `CHANGELOG.md`, `DECISIONS.md`…), else `custom`.
 - **Design authority**: `DESIGN_SYSTEM.md`, `docs/*DESIGN*.md`, `docs/*CANON*.md`, a tokens file.
@@ -33,9 +33,9 @@ Say in one paragraph what you found and what you could not.
 
 ## 2. Ask only the gaps, as numbered questions with the discovered default
 
-At most nine questions, each with what you inferred as the proposed answer:
+At most nine questions, each with what you inferred as the proposed answer (`node <core>/scripts/config.mjs where --json` gives `machineDefaults`, the review answers from this machine's welcome, as the proposed answer to question 3):
 
-1. Branching: trunk (push to the default branch) or feature branches with pull requests, and the branch naming?
+1. Branching: direct push to `<default>`, no pull request, or pull request into `<default>`, and the branch naming? Propose pull requests whenever a PR template, CODEOWNERS or protection was found; if the human still chooses direct push in that case, print one line that CODEOWNERS and required checks will not run and require an explicit yes.
 2. What must be green before a merge: which checks; is a human review required and from whom (CODEOWNERS, a team, anyone)?
 3. Pull requests: open them as drafts (default yes); after a review, draft the findings for you, post them as one comment, or keep them in the story file (machine default proposed); may Flow State approve when nothing high or medium remains (default no; merging is never automated)?
 4. How a change reaches production: automatic on merge, a manual deploy command, a release tag, a scheduled train? Which environments, in order?

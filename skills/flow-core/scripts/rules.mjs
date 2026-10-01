@@ -6,10 +6,13 @@
 //   AGENTS.md, CLAUDE.md (+ its @imports, one level), .claude/rules/*.md, .cursor/rules/*.mdc (alwaysApply or with a description),
 //   .github/copilot-instructions.md, .github/instructions/*.instructions.md, GEMINI.md, CONTRIBUTING.md, the PR template, CODEOWNERS,
 //   then flow.config.json rules.include[] (globs are not supported; list paths). rules.exclude[] removes paths.
+// Imports and include[] must be .md/.mdc files inside the project; anything else is listed as skipped with a reason.
 //
 // Usage: node rules.mjs [--project <dir>] [--list] [--max-bytes 32768]
-// Prints the concatenated rules with a source header per file, truncated at --max-bytes with a note. Exit 0 always.
+// Prints the concatenated rules with a source header per file (headings demoted one level). A file that does not fit the
+// budget (--max-bytes, else rules.maxBytes, else 32768) is left out and named in a closing "[not pasted: …]" line. Exit 0 always.
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -36,55 +39,74 @@ function cursorRuleApplies(text) {
   return /^description:\s*\S/m.test(fm[1]);
 }
 
-export function collect(project, { maxBytes = 32768 } = {}) {
+// Headings in a pasted rule file sit two levels under the brief's own sections; fenced code is left as it is.
+export function demote(body) {
+  let fenced = false;
+  return body
+    .split("\n")
+    .map((line) => {
+      if (/^\s*```/.test(line)) fenced = !fenced;
+      return fenced ? line : line.replace(/^(#{1,4}) /, "##$1 ");
+    })
+    .join("\n");
+}
+
+export function collect(project, { maxBytes } = {}) {
   const cfg = readConfig(project).rules || {};
+  maxBytes ??= Number(cfg.maxBytes) || 32768;
   const exclude = new Set((cfg.exclude || []).map((p) => path.resolve(project, p)));
   const files = [];
-  const add = (p) => {
-    const abs = path.resolve(project, p);
+  const skipped = [];
+  const root = path.resolve(project) + path.sep;
+  const add = (p, extra = false) => {
+    const abs = path.resolve(project, p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p);
+    const reason = !abs.startsWith(root) ? "outside project" : extra && /^\.env/.test(path.basename(abs)) ? "env file" : extra && !/\.mdc?$/.test(abs) ? "not markdown" : null;
+    if (reason) return skipped.push({ path: abs, reason });
     if (exclude.has(abs) || files.includes(abs) || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) return;
     files.push(abs);
   };
   for (const src of DEFAULT_SOURCES) {
     const abs = path.join(project, src);
-    if (src === ".claude/rules") listDir(abs, [".md"]).forEach(add);
-    else if (src === ".github/instructions") listDir(abs, [".instructions.md"]).forEach(add);
+    if (src === ".claude/rules") listDir(abs, [".md"]).forEach((f) => add(f));
+    else if (src === ".github/instructions") listDir(abs, [".instructions.md"]).forEach((f) => add(f));
     else if (src === ".cursor/rules") listDir(abs, [".mdc", ".md"]).forEach((f) => cursorRuleApplies(fs.readFileSync(f, "utf8")) && add(f));
     else add(src);
     if (src === "CLAUDE.md" && fs.existsSync(abs)) {
-      for (const m of fs.readFileSync(abs, "utf8").matchAll(/^@([^\s]+)/gm)) add(path.resolve(path.dirname(abs), m[1]));
+      for (const m of fs.readFileSync(abs, "utf8").matchAll(/(?:^|\s)@([^\s]+)/gm)) add(m[1].startsWith("~/") ? m[1] : path.resolve(path.dirname(abs), m[1]), true);
     }
   }
-  for (const p of cfg.include || []) add(p);
+  for (const p of cfg.include || []) add(p, true);
 
+  const rel = (f) => path.relative(project, f).split(path.sep).join("/");
   const sections = [];
+  const notPasted = [];
   let bytes = 0;
-  let truncated = false;
   for (const abs of files) {
-    const relp = path.relative(project, abs).split(path.sep).join("/");
     const body = fs.readFileSync(abs, "utf8").replace(/\r\n/g, "\n").trim();
     if (!body) continue;
-    const chunk = `### ${relp}\n\n${body}`;
+    const chunk = `### ${rel(abs)}\n\n${demote(body)}`;
     if (bytes + chunk.length > maxBytes) {
-      const room = Math.max(0, maxBytes - bytes - 80);
-      sections.push(chunk.slice(0, room) + `\n\n[… truncated: ${relp} exceeds the ${maxBytes}-byte rules budget; read it directly]`);
-      truncated = true;
-      break;
+      notPasted.push(rel(abs));
+      continue;
     }
     sections.push(chunk);
     bytes += chunk.length;
   }
-  return { files: files.map((f) => path.relative(project, f).split(path.sep).join("/")), text: sections.join("\n\n"), truncated };
+  const tail = [];
+  if (notPasted.length) tail.push(`not pasted: ${notPasted.join(", ")}`);
+  if (skipped.length) tail.push(`skipped: ${skipped.map((s) => `${s.path} (${s.reason})`).join(", ")}`);
+  if (tail.length) sections.push(`[${tail.join("; ")}; read them directly]`);
+  return { files: files.map(rel), text: sections.join("\n\n"), truncated: notPasted.length > 0, notPasted, skipped };
 }
 
 function main(argv) {
   const i = argv.indexOf("--project");
   const project = path.resolve(i === -1 ? "." : argv[i + 1]);
   const j = argv.indexOf("--max-bytes");
-  const maxBytes = j === -1 ? 32768 : Number(argv[j + 1]);
+  const maxBytes = j === -1 ? undefined : Number(argv[j + 1]) || undefined;
   const r = collect(project, { maxBytes });
   if (argv.includes("--list")) {
-    console.log(r.files.length ? r.files.join("\n") : "(no repository rule files found)");
+    console.log([...r.files, ...r.skipped.map((s) => `skipped: ${s.path} (${s.reason})`)].join("\n") || "(no repository rule files found)");
     return 0;
   }
   console.log(r.text || "(no repository rule files found)");

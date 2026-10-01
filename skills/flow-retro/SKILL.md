@@ -3,7 +3,7 @@ name: flow-retro
 description: Stage retro of Flow State (type "flow retro"). Closes an epic or a spec with evidence: harvests the numbers from committed verdicts and git, judges the result against the frozen hypothesis, lists what the judge caught and what humans caught, and turns the lessons into concrete proposals, each a small diff the human accepts or rejects. Use when a spec's stories are done, after a merge, or when the user asks for a retro. This is the self-improvement loop; nothing changes silently.
 license: MIT
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   flow-stage: retro
 ---
 
@@ -15,7 +15,7 @@ You judge the whole against the frozen spec, with numbers a script produced, and
 
 ## 0. Preconditions
 
-A spec with `Status: FROZEN` whose stories are `done` (or parked with a reason). Node is required for the harvest; without it, stop and say so. Read `retro.apply` from the config: `propose` (default: write proposals, human accepts each), `pr` (open a PR with the accepted project-level diffs), `auto` (apply project-level diffs and commit; never for flow-level ones).
+A spec with `Status: FROZEN` whose stories are `done` (or parked with a reason). Node is required for the harvest; without it, stop and say so. Read `retro.apply` from the config: `propose` (default: write proposals, human accepts each), `pr` (open a PR with the accepted project-level diffs), `auto` (apply pitfall lines and lens triggers and commit; everything else asks).
 
 ## 1. Harvest, never type a number
 
@@ -33,17 +33,19 @@ The frozen spec (hypothesis, failure signal, decisions), the stories file, every
 - **Findings**: what cost time or trust, with its source. Patterns across stories count more than single events.
 - **Proposals**: each one a concrete change with a target file and the exact text or diff, labelled by level:
   - **project**: a pitfall line for the project's `AGENTS.md` or `CLAUDE.md` block, a convention amendment, a lens trigger, a `flow.config.json` change, a template change under `docs/specs/`;
-  - **flow**: a change to Flow State itself (a skill sentence, a script behaviour, a template), written as an issue body for `https://github.com/agenticair/flow-state/issues`, labelled `retro`, with the evidence attached.
+  - **flow**: a change to Flow State itself (a skill sentence, a script behaviour, a template), written as an issue body that carries the harvest numbers and the generalised lesson, never company paths, commit subjects or quoted findings.
   No proposal without a finding behind it. No finding without a source.
 
 ## 4. Apply
 
-Present the proposals as a numbered list and stop: "Accept by number, reject by number, or `all`." In `propose` mode apply only the accepted project-level diffs, as one commit `retro: <slug>`; in `pr` mode open a PR with them; in `auto` mode apply and commit the project-level ones without asking, and still ask for the flow-level ones. Flow-level proposals the human accepts become issues (`gh issue create --label retro`) when `gh` is available, otherwise a file the human can paste.
+Present the proposals as a numbered list and stop: "Accept by number, reject by number, or `all`." `all` accepts project-level proposals only. In `propose` mode apply only the accepted project-level diffs, as one commit `retro: <slug>`; in `pr` mode open a PR with them; in `auto` mode apply and commit pitfall lines and lens triggers without asking, while `flow.config.json` keys, the instructions block and `.flow/roles/*` wait for the yes in every mode.
 
-Then `node <core>/scripts/state.mjs set stage=idle feature=none gate=none spec=none` and a note naming the retro file.
+Flow-level proposals: show the full body and the destination repository, and require a separate yes per issue (GR-5: a post is an external effect). On each yes: `gh issue create --repo <update.source> --title "retro: ..." --body-file <path> --label retro`, with `update.source` from `node <core>/scripts/config.mjs --get update.source`; without `gh`, a file the human can paste.
+
+Then `node <core>/scripts/state.mjs set stage=idle feature=none size=none gate=none spec=none` and a note naming the retro file.
 
 ## Never
 
 - Never invent a number, a quote, or a cause.
-- Never change a file the human did not accept a proposal for.
+- Never change a file the human did not accept a proposal for; `retro.apply: auto` counts as that acceptance only for pitfall lines and lens triggers.
 - Never skip the verdict because the numbers look good.

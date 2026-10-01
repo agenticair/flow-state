@@ -2,7 +2,8 @@
 // Flow State configuration: four layers, one merged view.
 //   defaults  <-  ~/.flow/config.json (this machine; FLOW_HOME overrides)  <-  flow.config.json (the team)  <-  flow.config.user.json (just you)
 // Scalars override; arrays of objects with a `name` merge by name; other arrays append.
-// Keys marked x-team in the schema (review.comment, review.approve) are refused in flow.config.user.json.
+// Keys marked x-team in the schema (review.*, ship.verify, ship.smoke, retro.apply) are refused in flow.config.user.json
+// and never merged from ~/.flow/config.json: there they are only the defaults flow setup proposes (where().machineDefaults).
 //
 // Usage:
 //   node config.mjs [--project <dir>] [--get <dotted.key>]            merged config (or one value)
@@ -130,6 +131,21 @@ function has(obj, dotted) {
   return true;
 }
 
+// Remove a dotted key from obj and return its value (undefined when absent).
+function pluck(obj, dotted) {
+  const parts = dotted.split(".");
+  let cur = obj;
+  for (const p of parts.slice(0, -1)) {
+    if (!isObj(cur[p])) return undefined;
+    cur = cur[p];
+  }
+  const last = parts.at(-1);
+  if (!(last in cur)) return undefined;
+  const v = cur[last];
+  delete cur[last];
+  return v;
+}
+
 export function files(projectDir) {
   return { home: homeFile(), project: path.join(projectDir, "flow.config.json"), personal: path.join(projectDir, "flow.config.user.json") };
 }
@@ -141,10 +157,15 @@ export function load(projectDir) {
   const project = readJSON(f.project) || {};
   const personal = readJSON(f.personal) || {};
   const errors = [];
-  for (const key of teamKeys(schema)) if (has(personal, key)) errors.push(`${key}: a team setting; set it in flow.config.json, not flow.config.user.json`);
+  const machineDefaults = {};
+  for (const key of teamKeys(schema)) {
+    if (has(personal, key)) errors.push(`${key}: a team setting; set it in flow.config.json, not flow.config.user.json`);
+    const v = pluck(home, key);
+    if (v !== undefined) machineDefaults[key] = v;
+  }
   const merged = merge(merge(merge(DEFAULTS, home), project), personal);
   errors.push(...validate(merged, schema));
-  return { config: merged, errors, files: f, exists: { home: fs.existsSync(f.home), project: fs.existsSync(f.project), personal: fs.existsSync(f.personal) } };
+  return { config: merged, errors, files: f, machineDefaults, exists: { home: fs.existsSync(f.home), project: fs.existsSync(f.project), personal: fs.existsSync(f.personal) } };
 }
 
 export function installedVersion() {
@@ -159,7 +180,7 @@ export function installedVersion() {
 
 export function where(projectDir) {
   const r = load(projectDir);
-  return { ...r.files, exists: r.exists, welcomed: r.config.welcomed || "", version: installedVersion(), firstRun: !r.exists.home };
+  return { ...r.files, exists: r.exists, machineDefaults: r.machineDefaults, welcomed: r.config.welcomed || "", version: installedVersion(), firstRun: !r.exists.home };
 }
 
 function coerce(key, value, schema) {

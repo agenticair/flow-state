@@ -17,13 +17,18 @@ const TOOLS = {
   claude: { dir: ".claude", skills: [".claude/skills/flow"], agents: [".claude/agents/flow-judge.md"], hooks: [".claude/settings.json"], install: "/plugin marketplace add agenticair/flow-state  then  /plugin install flow-state@flow-state", agentsFix: "install from a clone: ./install.sh --only claude  (or the plugin route, which carries agents and hooks)" },
   codex: { dir: ".codex", skills: [".agents/skills/flow", ".codex/skills/flow"], agents: [".codex/agents/flow-judge.toml"], hooks: [".codex/hooks.json"], install: "npx skills add agenticair/flow-state  (or: codex plugin marketplace add agenticair/flow-state)", agentsFix: "./install.sh --only codex  (Codex plugins cannot carry agents or hooks)" },
   cursor: { dir: ".cursor", skills: [".agents/skills/flow", ".cursor/skills/flow"], agents: [".cursor/agents/flow-judge.md"], hooks: [".cursor/hooks.json"], install: "npx skills add agenticair/flow-state", agentsFix: "./install.sh --only cursor" },
-  copilot: { dir: ".copilot", skills: [".agents/skills/flow", ".copilot/skills/flow"], agents: [".copilot/agents/flow-judge.agent.md"], hooks: [".copilot/hooks"], install: "npx skills add agenticair/flow-state", agentsFix: "./install.sh --only copilot" },
+  copilot: { dir: ".copilot", skills: [".agents/skills/flow", ".copilot/skills/flow"], agents: [".copilot/agents/flow-judge.agent.md"], hooks: [], install: "npx skills add agenticair/flow-state", agentsFix: "./install.sh --only copilot" },
   gemini: { dir: ".gemini", skills: [".agents/skills/flow", ".gemini/skills/flow"], agents: [".gemini/agents/flow-judge.md"], hooks: [], install: "npx skills add agenticair/flow-state", agentsFix: "./install.sh --only gemini" },
 };
 
+// Catalog probes only: runs the command with its catalog args (shell on Windows for .cmd shims).
 function has(cmd, args = ["--version"]) {
   const r = spawnSync(cmd, args, { encoding: "utf8", shell: process.platform === "win32" });
   return r.status === 0 ? (r.stdout || r.stderr || "").trim().split("\n")[0] : null;
+}
+// Config-declared probes: presence on PATH only; the command itself is never executed.
+function onPath(cmd) {
+  return spawnSync(process.platform === "win32" ? "where" : "which", [String(cmd)], { encoding: "utf8", shell: false }).status === 0;
 }
 function fileHas(p, needle) {
   try {
@@ -81,7 +86,7 @@ function probe(p, ctx) {
       return where.length ? `mcp "${p.server}" in ${where.join(", ")}` : null;
     }
     case "cli":
-      return has(p.command, p.args || ["--version"]) ? `cli ${p.command}` : null;
+      return (p.declared ? onPath(p.command) : has(p.command, p.args || ["--version"])) ? `cli ${p.command}` : null;
     case "env":
       return process.env[p.var] ? `env ${p.var} set` : null;
     case "file":
@@ -97,7 +102,7 @@ export function resolveIntegrations(cfg) {
   if (src && src !== "none" && !entries.some((e) => e.name === src)) entries.push({ name: src, required: true, usedBy: ["spec"] });
   return entries.map((e) => {
     const cat = CATALOG[e.name] || Object.values(CATALOG).find((c) => (c.aliases || []).includes(e.name));
-    const probes = e.kind ? [{ kind: e.kind, server: e.server, command: e.command, args: e.args, var: e.var, path: e.path }] : cat ? cat.probes : [];
+    const probes = e.kind ? [{ kind: e.kind, server: e.server, command: e.command, var: e.var, path: e.path, declared: true }] : cat ? cat.probes : [];
     return { name: e.name, required: e.required !== false, probes, fix: e.fix || cat?.fix || { default: "declare a kind (mcp | cli | env | file) for this integration in flow.config.json" }, usedBy: e.usedBy || cat?.stages || [], known: !!cat || !!e.kind };
   });
 }
@@ -120,10 +125,12 @@ export function diagnose({ project = process.cwd(), home = os.homedir(), only = 
     const skills = t.skills.some((p) => fs.existsSync(path.join(home, p)) || fs.existsSync(path.join(project, p))) || (tool === "claude" && pluginInstalled());
     const agents = t.agents.some((p) => fs.existsSync(path.join(home, p)) || fs.existsSync(path.join(project, p.replace(".copilot/agents", ".github/agents")))) || (tool === "claude" && pluginInstalled());
     const hooks = t.hooks.length === 0 ? null : t.hooks.some((p) => fileHas(path.join(home, p), "flow-state") || fileHas(path.join(project, p), "flow-state")) || (tool === "claude" && pluginInstalled());
-    tiers[tool] = skills && agents ? "A" : skills ? "B" : "not installed";
+    // Codex and Cursor render the judge with a shell (only a read-only sandbox / readonly flag limits writes), so separation is by instruction there.
+    tiers[tool] = skills && agents ? (tool === "codex" || tool === "cursor" ? "A- (judge may run; separation by instruction)" : tool === "copilot" || tool === "gemini" ? "A (adapter experimental)" : "A") : skills ? "B" : "not installed";
     add("tool", `${tool}: skills`, skills, skills ? "found" : "missing", t.install, { optional: true });
     add("tool", `${tool}: agent roles (builder with a shell, judge without)`, agents, agents ? "found" : "missing (tier B: roles by instruction)", t.agentsFix, { optional: true });
     if (hooks !== null) add("tool", `${tool}: hooks`, hooks, hooks ? "found" : "missing (frozen-spec guard, dispatch guard, state hydration off)", t.agentsFix, { optional: true });
+    else if (tool === "copilot") add("tool", "copilot: hooks", false, "no hook adapter for Copilot yet (the frozen-spec and dispatch guards are prose there)", null, { optional: true });
     for (const stale of t.skills.map((p) => path.join(home, path.dirname(p), "flow-adopt"))) if (fs.existsSync(stale)) add("tool", `${tool}: stale skill folder`, false, `${stale} (renamed to flow-setup in 0.6)`, `remove it: rm -r "${stale}"`, { optional: true });
   }
 
@@ -144,7 +151,8 @@ export function diagnose({ project = process.cwd(), home = os.homedir(), only = 
   const verify = cfg?.ship?.verify || agentsVerifyLine(project);
   add("project", "verify command known", !!verify, verify || "unknown", "flow settings: set ship.verify (build, lint, test)");
   const ways = cfg?.ship?.branching;
-  add("project", "ways of working recorded (branching, merge requirements, deploy)", !!ways, ways ? `branching ${ways}; pr checks ${(cfg.ship.pr?.requiredChecks || []).length}; deploy ${cfg.ship.deploy || "unset"}` : "not recorded", "flow setup asks these; or flow settings");
+  const waysMissing = [!ways && "ship.branching", !cfg?.ship?.verify && "ship.verify"].filter(Boolean);
+  add("project", "ways of working recorded (branching, verify, merge requirements, deploy)", !waysMissing.length, waysMissing.length ? `not recorded: ${waysMissing.join(", ")} unset` : `branching ${ways}; verify ${cfg.ship.verify}; pr checks ${(cfg.ship.pr?.requiredChecks || []).length}; deploy ${cfg.ship.deploy || "unset"}`, "flow setup asks these; or flow settings");
 
   // integrations
   const mcp = mcpServers({ home, project });

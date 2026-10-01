@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // PreToolUse guard on subagent dispatch: while a build run is open, flow-builder and flow-judge may only be dispatched
 // for the step that `step.mjs next` prepared (the seal). This is what stops a compacted or confused session from
-// launching a builder without a brief, or a judge without a package.
+// launching a builder without a brief, or a judge without a package. An unreadable run file denies.
 import fs from "node:fs";
 import path from "node:path";
-import { readInput, toolFromArgv, projectDir, stateDir, respond } from "./lib.mjs";
+import { fileURLToPath } from "node:url";
+import { guard, projectDir, stateDir } from "./lib.mjs";
 
 export function decide(input) {
   if (!/^(Task|Agent)$/i.test(input.tool_name || "")) return null;
@@ -18,18 +19,12 @@ export function decide(input) {
   try {
     run = JSON.parse(fs.readFileSync(runFile, "utf8"));
   } catch {
-    return null;
+    return `The build run file ${runFile} is unreadable; no builder or judge is dispatched until it is repaired or discarded (node <flow-core>/scripts/step.mjs abort --yes).`;
   }
+  if (run.step === "delivered") return null; // a finished run lingers for flow-review; it seals nothing
   const expected = `${run.task}:${role}:${run.attempt}`;
   if (run.seal === expected) return null;
   return `A build run is open (task ${run.task}/${run.tasksTotal}, step ${run.step}) and this dispatch is not the prepared step. Run: node <flow-core>/scripts/step.mjs next  and dispatch exactly what it prints.`;
 }
 
-const input = readInput();
-const reason = decide(input);
-if (reason) {
-  if (toolFromArgv() === "cursor") respond({ permission: "deny", user_message: reason, agent_message: reason });
-  else respond({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } });
-} else if (toolFromArgv() === "cursor") {
-  respond({ permission: "allow" });
-}
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) guard(decide);

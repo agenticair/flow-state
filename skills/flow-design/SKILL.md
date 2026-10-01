@@ -3,7 +3,7 @@ name: flow-design
 description: Stage design of Flow State (type "flow design"). Turns a UI story into a screen inventory before any code: route, reference in the project's own design system, components, the four states (empty, loading, error, success) with their copy, and a deviation log. Use for stories of type ui after the go gate, or when the user asks to design a screen or spec a UI change. Project-aware; never invents a visual language when the project has one.
 license: MIT
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   flow-stage: design
 ---
 
@@ -15,7 +15,7 @@ You write down what a screen must look like and do before a builder touches it. 
 
 ## 0. Preconditions
 
-A story with `Type: ui` and `Status: ready`. Find the project's design authority in this order: `flow.config.json` `design.doc`; a file named like `DESIGN_SYSTEM.md`, `docs/*DESIGN*.md`, `docs/*CANON*.md`, `docs/*CLARITY*.md`; a tokens file (`globals.css`, `tokens.*`, `tailwind.config.*`). If none exists, say so and ask the human for one reference (a page they like in the product, or a system to adopt) before writing anything. Read the repository rules (`node <core>/scripts/rules.mjs --list`).
+A story with `Type: ui` and `Status: ready`. Find the project's design authority in this order: `flow.config.json` `design.doc`; a file named like `DESIGN_SYSTEM.md`, `docs/*DESIGN*.md`, `docs/*CANON*.md`, `docs/*CLARITY*.md`; a tokens file (`globals.css`, `tokens.*`, `tailwind.config.*`) only when it defines something (a non-empty `theme` or `theme.extend`, or `:root` custom properties). If none exists, say so and ask the human for one reference (a page they like in the product, or a system to adopt) before writing anything; on the answer, propose `node <core>/scripts/config.mjs set --scope project design.doc=<path>` and write it on a yes. Read the repository rules (`node <core>/scripts/rules.mjs --list`). Then `node <core>/scripts/state.mjs set stage=design`.
 
 ## 1. Inventory
 
@@ -34,7 +34,7 @@ If the project uses a canvas or a design tool (Stitch, paper.design, Figma), pro
 
 ## 3. Close
 
-Set the story's `Gate` to `visual` if it is not already, add the screen files to the story's Notes for the builder, and route to `flow-build`. The builder's plan must list the screen file under Context and the four states under Accepts.
+Set the story's `Gate` to `visual` if it is not already, add the screen files to the story's Notes for the builder, `node <core>/scripts/state.mjs set stage=build`, and route to `flow-build`. The builder's plan must list the screen file under Context and the four states under Accepts.
 
 ## Never
 

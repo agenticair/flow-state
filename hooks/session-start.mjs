@@ -18,7 +18,10 @@ export function hydration(project) {
   return parts.join("\n");
 }
 
-const input = readInput();
+let input = {};
+try {
+  input = readInput();
+} catch {}
 const ctx = hydration(projectDir(input));
 if (ctx) {
   if (toolFromArgv() === "cursor") respond({ additional_context: ctx });

@@ -3,7 +3,7 @@ name: flow-stories
 description: Stage stories of Flow State (type "flow stories"). Turns a frozen Flow State spec into a slice table and one story file per slice, scored and ordered so every batch delivers something observable, then stops at the go gate where the human names the story that starts. Use after flow-spec has frozen a spec, or when the user asks to break a spec into stories or slices.
 license: MIT
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   flow-stage: stories
 ---
 
@@ -15,8 +15,8 @@ You divide a frozen spec into stories a builder can finish in one session each. 
 
 ## 0. Preconditions and mode
 
-- `.agent/STATE.md` has `stage: spec` and `gate: freeze`, and its `spec` path has `Status: FROZEN`. Otherwise stop and route to `flow-spec`.
-- Mode is `step` (stop after the draft table and after scoring) or `run` (stop only at the go gate). `autonomy: gated` forces step.
+- `.agent/STATE.md` has `stage: spec` and `gate: freeze`, and its `spec` path has `Status: FROZEN`. A frozen spec whose stories file still has non-done stories is also accepted at any gate: jump straight to section 6. Otherwise stop and route to `flow-spec`.
+- Mode is `step` (stop after the draft table and after scoring) or `run` (stop only at the go gate). `autonomy: gated` forces step; `assisted` and `auto` are run.
 - `node --version`; without Node, scores are `UNVERIFIED (no node)`.
 
 ## 1. Read
@@ -48,13 +48,13 @@ Batches of two to four stories. Every batch delivers something observable. Infra
 
 ## 5. Review
 
-Dispatch `flow-spec-reviewer` with the stories file and the story files only. Apply what you accept; list what you rejected in one line each. Re-score anything you changed.
+Dispatch `flow-spec-reviewer` with the stories file and the story files only; without a reviewer agent, review in a separate pass using only those files. Apply what you accept; list what you rejected in one line each. A "layer split" finding cannot be rejected: re-slice, then re-score. Re-score anything you changed.
 
 ## 6. The go gate
 
 Print the slice table and the batches. Then stop with exactly: "Name the story that starts (its number), or tell me what to change." Do not proceed on anything else, in any mode.
 
-On the answer: set that story's `Status: ready`, write `Next story: #<n> <slug>` under "Go" in the stories file, and `node <core>/scripts/state.mjs set stage=stories gate=go`. Say what comes next: `flow-build` with that story.
+On the answer: set that story's `Status: ready`, write `Next story: #<n> <slug>` under "Go" in the stories file, `node <core>/scripts/state.mjs set stage=stories gate=go` and `node <core>/scripts/state.mjs note "go: #<n> <slug>"`. Say what comes next: `flow-design` for a `Type: ui` story, `flow-build` for any other. A story that is not `Status: ready` cannot start a build (`init` refuses it).
 
 ## Never
 

@@ -9,26 +9,36 @@ import { parseSpec, score, summary, freezable, setStatus } from "../skills/flow-
 const SCRIPT = path.resolve("skills/flow-core/scripts/spec.mjs");
 const TEMPLATE = fs.readFileSync(path.resolve("skills/flow-core/templates/spec.md"), "utf8");
 
-function filled({ needs = 0, proposed = false, pending = false } = {}) {
+function filled({
+  needs = 0,
+  proposed = false,
+  pending = false,
+  ticket = "none",
+  failure = 'list sign-ups from /writing stay at zero for four weeks (analytics, weekly)',
+  measure = "`SELECT count(*) FROM signups WHERE source='writing'` in Metabase; 0 on 2026-09-29",
+  said = 'said: "never client-side" (owner, 2026-09-29)',
+  deduced = "deduced: from the CSP in `next.config.ts:12`",
+} = {}) {
   return `# Writing — Spec
 
 Status: DRAFT
 Date: 2026-09-29
 Project: demo
-Ticket: none
+Ticket: ${ticket}
 
 ## Hypothesis
 
 **Bet:** Visitors who read one post are likelier to join the list.
-**We would know it failed if:** ${pending ? "[⚠️ Pending: define with owner]" : "list sign-ups from /writing stay at zero for four weeks (analytics, weekly)"}
+**We would know it failed if:** ${pending ? "[⚠️ Pending: define with owner]" : failure}
+**Measure:** ${measure}
 **Anti-scope:** No comments, no search, no images from Medium.
 
 ## Frozen decisions
 
 | # | Decision | Provenance |
 |---|---|---|
-| D-1 | Feed is fetched server-side with revalidate 3600 | said: "never client-side" |
-| D-2 | Text only, no Medium images | deduced: from the CSP in \`next.config.ts:12\` |
+| D-1 | Feed is fetched server-side with revalidate 3600 | ${said} |
+| D-2 | Text only, no Medium images | ${deduced} |
 ${proposed ? "| D-3 | Add a search box | proposed |\n" : ""}
 ## Context for the builder
 
@@ -86,32 +96,70 @@ test("a pending placeholder lowers the score but does not block freeze", () => {
   assert.equal(freezable(spec).ok, true);
 });
 
-test("summary is one line per hypothesis field and per decision", () => {
-  const lines = summary(parseSpec(filled()));
-  assert.equal(lines.length, 5);
-  assert.match(lines[3], /^D-1 .* \[said\]$/);
-  assert.match(lines[4], /^D-2 .* \[deduced\]$/);
+test("a said decision without a quote and (who, date) blocks freeze; the score is unchanged", () => {
+  const spec = parseSpec(filled({ said: 'said: "never client-side"' }));
+  assert.equal(score(spec).d2, 10);
+  const f = freezable(spec);
+  assert.equal(f.ok, false);
+  assert.match(f.reasons.join(), /D-1 said without a quote and \(who, date\)/);
 });
 
-test("freeze flips the status and stamps the date; unfreeze reverts", () => {
-  const frozen = setStatus(filled(), "FROZEN", "2026-09-29");
-  assert.match(frozen, /^Status: FROZEN\nFrozen: 2026-09-29$/m);
+test("a deduced decision without a source blocks freeze", () => {
+  const f = freezable(parseSpec(filled({ deduced: "deduced: obvious" })));
+  assert.equal(f.ok, false);
+  assert.match(f.reasons.join(), /D-2 deduced without a source/);
+});
+
+test("a ticket that could not be read blocks freeze", () => {
+  const f = freezable(parseSpec(filled({ ticket: "[⚠️ Pending: ticket X not readable; connect jira]" })));
+  assert.equal(f.ok, false);
+  assert.match(f.reasons.join(), /ticket not readable/);
+});
+
+test("an empty or placeholder failure signal and an empty measure block freeze", () => {
+  const f1 = freezable(parseSpec(filled({ failure: "<how we would know>" })));
+  assert.match(f1.reasons.join(), /failure signal is empty/);
+  const f2 = freezable(parseSpec(filled({ measure: "" })));
+  assert.equal(f2.ok, false);
+  assert.match(f2.reasons.join(), /measure is empty/);
+  assert.equal(freezable(parseSpec(filled({ measure: "[⚠️ Pending: define with owner]" }))).ok, true);
+});
+
+test("summary shows each decision's provenance and points at Context for the builder", () => {
+  const lines = summary(parseSpec(filled()));
+  assert.equal(lines[2], "Measure: `SELECT count(*) FROM signups WHERE source='writing'` in Metabase; 0 on 2026-09-29");
+  assert.match(lines[4], /^D-1 .* \[said: "never client-side" \(owner, 2026-09-29\)\]$/);
+  assert.match(lines[5], /^D-2 .* \[deduced: from the CSP in `next\.config\.ts:12`\]$/);
+  assert.equal(lines[6], "Context for the builder: 2 bullets; read that section before freezing");
+  assert.equal(lines.length, 9);
+  assert.match(lines[7], /^ {2}- Feed URL/);
+});
+
+test("freeze flips the status and stamps the date and who froze it; unfreeze reverts", () => {
+  const frozen = setStatus(filled(), "FROZEN", "2026-09-29", "owner");
+  assert.match(frozen, /^Status: FROZEN\nFrozen: 2026-09-29\nFrozen by: owner$/m);
   const back = setStatus(frozen, "DRAFT", "2026-09-30");
   assert.match(back, /^Status: DRAFT$/m);
-  assert.doesNotMatch(back, /^Frozen:/m);
+  assert.doesNotMatch(back, /^Frozen/m);
 });
 
-test("CLI: freeze refuses a draft with open questions (exit 4) and freezes a clean one", () => {
+test("CLI: freeze needs --yes, refuses open questions (exit 4), then freezes a clean one", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "flow-spec-"));
-  const bad = path.join(dir, "bad.md");
-  fs.writeFileSync(bad, filled({ needs: 1 }));
-  const r = spawnSync(process.execPath, [SCRIPT, "freeze", bad], { encoding: "utf8" });
-  assert.equal(r.status, 4);
   const good = path.join(dir, "good.md");
   fs.writeFileSync(good, filled());
-  const out = execFileSync(process.execPath, [SCRIPT, "freeze", good], { encoding: "utf8" });
+  const noFlag = spawnSync(process.execPath, [SCRIPT, "freeze", good], { encoding: "utf8" });
+  assert.equal(noFlag.status, 2);
+  assert.match(noFlag.stderr, /human gate/);
+  assert.match(fs.readFileSync(good, "utf8"), /^Status: DRAFT$/m);
+  const bad = path.join(dir, "bad.md");
+  fs.writeFileSync(bad, filled({ needs: 1 }));
+  const r = spawnSync(process.execPath, [SCRIPT, "freeze", bad, "--yes"], { encoding: "utf8" });
+  assert.equal(r.status, 4);
+  const out = execFileSync(process.execPath, [SCRIPT, "freeze", good, "--yes"], { encoding: "utf8" });
   assert.match(out, /^frozen good\.md/);
-  assert.match(fs.readFileSync(good, "utf8"), /^Status: FROZEN$/m);
-  const again = spawnSync(process.execPath, [SCRIPT, "freeze", good], { encoding: "utf8" });
+  const text = fs.readFileSync(good, "utf8");
+  assert.match(text, /^Status: FROZEN$/m);
+  assert.match(text, /^Frozen by: .+$/m);
+  const again = spawnSync(process.execPath, [SCRIPT, "freeze", good, "--yes"], { encoding: "utf8" });
   assert.equal(again.status, 4);
 });

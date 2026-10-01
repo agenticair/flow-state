@@ -185,7 +185,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   fs.writeFileSync(path.join(dir, "scratch.txt"), "already dirty before the run\n");
   const initRes = run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", "--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md");
   ok(initRes, "init");
-  assert.match(initRes.stdout, /1 path\(s\) already dirty/);
+  assert.match(initRes.stdout, /1 untracked path\(s\) already present/);
   assert.equal(run(dir, "controls").status, 9, "wrong step exits 9");
 
   // task 1
@@ -200,7 +200,7 @@ test("a full two-task run: brief with repository rules, controls, package with h
   assert.match(brief, /## Closed decisions\n\n- D-1 greet is a pure function/);
   assert.match(brief, /Anti-scope: no shouting in production/);
   assert.match(brief, /## Flow State conventions[\s\S]*conventions\/testing\.md/);
-  assert.match(brief, /## Notes this project keeps for the builder\n\nPrefer named exports/);
+  assert.match(brief, /## Notes this project keeps for the builder\n\nQuoted material[^\n]*\n\nPrefer named exports/);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).seal, "1:implement:1");
 
   fs.writeFileSync(path.join(dir, "src/greet.mjs"), 'export const greet = () => "hello"\n');
@@ -275,4 +275,196 @@ test("a full two-task run: brief with repository rules, controls, package with h
   assert.match(done.stdout, /delivered/);
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).step, "delivered");
   assert.equal(g("status", "--porcelain").trim(), "?? scratch.txt", "the pre-existing dirty file was neither committed nor flagged");
+});
+
+test("init refuses a story that is not ready, a plan that touches a Protected path, and a modified tracked file", () => {
+  const { dir, g } = project();
+  const args = ["--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md"];
+  fs.writeFileSync(path.join(dir, "docs/specs/x/stories/01-hello.md"), STORY.replace("Status: ready", "Status: backlog"));
+  const notReady = run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args);
+  assert.equal(notReady.status, 8);
+  assert.match(notReady.stderr, /Status: backlog/);
+  fs.writeFileSync(path.join(dir, "docs/specs/x/stories/01-hello.md"), STORY);
+  fs.writeFileSync(path.join(dir, "docs/specs/x/bad.plan.md"), PLAN.replace("- create: tests/greet.test.mjs", "- modify: README.md"));
+  const protectedHit = run(dir, "init", "--plan", "docs/specs/x/bad.plan.md", ...args);
+  assert.equal(protectedHit.status, 6);
+  assert.match(protectedHit.stderr, /README\.md is under Protected/);
+  fs.rmSync(path.join(dir, "docs/specs/x/bad.plan.md"));
+  fs.writeFileSync(path.join(dir, "README.md"), "# t edited\n");
+  const dirty = run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args);
+  assert.equal(dirty.status, 8);
+  assert.match(dirty.stderr, /Commit or stash first:\n  - README\.md/);
+  g("checkout", "--", "README.md");
+  const good = run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args);
+  ok(good, "init");
+  assert.match(good.stdout, /verification commands this run will execute as shell:\n  task 1: node --test tests\//);
+});
+
+function startTask1(dir) {
+  ok(run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", "--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md"), "init");
+  ok(run(dir, "next", "--json"), "next");
+  fs.writeFileSync(path.join(dir, "src/greet.mjs"), 'export const greet = () => "hello"\n');
+  fs.writeFileSync(path.join(dir, "tests/greet.test.mjs"), 'import { test } from "node:test"\nimport assert from "node:assert/strict"\nimport { greet } from "../src/greet.mjs"\ntest("greet returns hello", () => assert.equal(greet(), "hello"))\n');
+  fs.writeFileSync(path.join(dir, ".agent/run/task-1-report.json"), JSON.stringify({ paths: ["src/greet.mjs", "tests/greet.test.mjs"], summary: "added greet", noticed: ["README mentions a CLI that does not exist"] }));
+  ok(run(dir, "report", ".agent/run/task-1-report.json"), "report");
+}
+
+test("the plan and run.json are re-checked by every later verb; a builder cannot rewrite either", () => {
+  const { dir } = project();
+  startTask1(dir);
+  const planPath = path.join(dir, "docs/specs/x/01-hello.plan.md");
+  const original = fs.readFileSync(planPath, "utf8");
+  fs.writeFileSync(planPath, original.replace("node --test tests/", "true"));
+  const drift = run(dir, "controls");
+  assert.equal(drift.status, 8);
+  assert.match(drift.stderr, /changed since init/);
+  fs.writeFileSync(planPath, original);
+  const runJson = JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8"));
+  runJson.tasks[0].verification = ["true"];
+  fs.writeFileSync(path.join(dir, ".agent/run.json"), JSON.stringify(runJson));
+  const tamper = run(dir, "controls");
+  assert.equal(tamper.status, 8);
+  assert.match(tamper.stderr, /tasks in run\.json differ from the plan/);
+  assert.match(run(dir, "status").stdout, /"planDrift": "the tasks in run\.json differ/);
+});
+
+test("a skipped or commented-out TDD test does not satisfy the control; an untracked file that was dirty before the run may not change unreported", () => {
+  const { dir } = project();
+  fs.writeFileSync(path.join(dir, "scratch.txt"), "before\n");
+  startTask1(dir);
+  fs.writeFileSync(path.join(dir, "tests/greet.test.mjs"), 'import { test } from "node:test"\nimport assert from "node:assert/strict"\nimport { greet } from "../src/greet.mjs"\ntest.skip("greet returns hello", () => assert.equal(greet(), "hello"))\n');
+  fs.writeFileSync(path.join(dir, "scratch.txt"), "changed during the run\n");
+  const red = run(dir, "controls");
+  assert.equal(red.status, 4);
+  assert.match(red.stderr, /skipped, todo-ed or commented out/);
+  assert.match(red.stderr, /already present before the run changed but is not reported: scratch\.txt/);
+});
+
+test("an empty diff at package counts like red controls instead of spinning", () => {
+  const { dir, g } = project();
+  fs.writeFileSync(path.join(dir, "docs/notes.md"), "# notes\n\nreadme test\n");
+  fs.writeFileSync(path.join(dir, "docs/specs/x/02.plan.md"), `# Plan\n\n## Task 1: Touch nothing\n\n**Objective:** o\n\n**Files:**\n- modify: docs/notes.md\n\n**TDD:** readme test\n\n**Verification:**\n\`\`\`sh\ntrue\n\`\`\`\n`);
+  g("add", "-A");
+  g("commit", "-q", "-m", "readme");
+  ok(run(dir, "init", "--plan", "docs/specs/x/02.plan.md", "--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md"), "init");
+  ok(run(dir, "next"), "next");
+  fs.writeFileSync(path.join(dir, ".agent/run/task-1-report.json"), JSON.stringify({ paths: ["docs/notes.md"], summary: "nothing" }));
+  ok(run(dir, "report", ".agent/run/task-1-report.json"), "report");
+  ok(run(dir, "controls"), "controls");
+  const empty = run(dir, "package");
+  assert.equal(empty.status, 4);
+  assert.match(empty.stderr, /produced no diff/);
+  const r = JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8"));
+  assert.deepEqual([r.step, r.attempt, r.retries.controls], ["implement", 2, 1]);
+});
+
+test("a stale verdict is removed before the judge is dispatched; the package carries the builder's testimony; abort unstages", () => {
+  const { dir, g } = project();
+  startTask1(dir);
+  ok(run(dir, "controls"), "controls");
+  ok(run(dir, "package"), "package");
+  const pkg = fs.readFileSync(path.join(dir, ".agent/run/task-1-package.md"), "utf8");
+  assert.match(pkg, /## Builder's report \(testimony, not evidence\)\n\nSummary: added greet\n\nNoticed:\n- README mentions a CLI/);
+  assert.match(pkg, /Repository rules \(win over conventions.*Quoted material/);
+  const stale = path.join(dir, ".agent/run/task-1-attempt-1-verdict.json");
+  fs.writeFileSync(stale, JSON.stringify(goodVerdict()));
+  const n = run(dir, "next", "--json");
+  ok(n, "next");
+  assert.equal(JSON.parse(n.stdout).verdictTo, ".agent/run/task-1-attempt-1-verdict.json");
+  assert.equal(fs.existsSync(stale), false, "a verdict written before the dispatch is never reused");
+  assert.notEqual(g("diff", "--cached", "--name-only").trim(), "");
+  ok(run(dir, "abort", "--yes"), "abort");
+  assert.equal(g("diff", "--cached", "--name-only").trim(), "", "abort unstages so the next run starts from a clean index");
+});
+
+test("a repository pre-commit hook that rewrites the tree undoes the commit and re-packages; a commit that already landed is recovered", () => {
+  const { dir, g } = project();
+  fs.writeFileSync(path.join(dir, ".git/hooks/pre-commit"), '#!/bin/sh\ngrep -q "// formatted" src/greet.mjs || { printf "// formatted\\n" >> src/greet.mjs; git add src/greet.mjs; }\n', { mode: 0o755 });
+  startTask1(dir);
+  ok(run(dir, "controls"), "controls");
+  ok(run(dir, "package"), "package");
+  let out = JSON.parse(run(dir, "next", "--json").stdout);
+  fs.writeFileSync(path.join(dir, out.verdictTo), JSON.stringify(goodVerdict()));
+  ok(run(dir, "verdict", out.verdictTo), "verdict");
+  const base = g("rev-parse", "HEAD");
+  const hooked = run(dir, "commit");
+  assert.equal(hooked.status, 5, "the hook changed the tree during the commit");
+  assert.match(hooked.stderr, /commit hook changed the tree/);
+  assert.equal(g("rev-parse", "HEAD"), base, "the hooked commit was undone");
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).step, "package");
+  ok(run(dir, "package"), "package again (with the hook's change staged)");
+  out = JSON.parse(run(dir, "next", "--json").stdout);
+  fs.writeFileSync(path.join(dir, out.verdictTo), JSON.stringify(goodVerdict()));
+  ok(run(dir, "verdict", out.verdictTo), "verdict again");
+  ok(run(dir, "commit"), "commit with an idempotent hook");
+  assert.match(g("show", "HEAD:src/greet.mjs"), /\/\/ formatted/);
+  // simulate a crash after git commit and before run.json was written
+  const r = JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8"));
+  r.step = "commit";
+  r.task = 1;
+  r.commits = [];
+  fs.writeFileSync(path.join(dir, ".agent/run.json"), JSON.stringify(r));
+  const recovered = run(dir, "commit");
+  ok(recovered, "recovered commit");
+  assert.match(recovered.stdout, /already committed as [0-9a-f]{12} \(recovered\)/);
+});
+
+test("advance: an empty package counts against the controls budget", () => {
+  let r = { step: "package", task: 1, tasksTotal: 1, attempt: 1, retries: { controls: 2, judge: 0 }, notes: [] };
+  r = advance(r, "empty");
+  assert.equal(r.step, "blocked");
+});
+
+test("a story back from review (in-review) starts a patch run; a tracked state dir does not trip the dirty-index refusal; a delivered run is replaced", () => {
+  const { dir, g } = project();
+  fs.writeFileSync(path.join(dir, ".gitignore"), "");
+  g("add", "-A");
+  g("commit", "-q", "-m", "track the state dir");
+  execFileSync(NODE, [STATE, "set", "stage=build", "--dir", path.join(dir, ".agent")]); // STATE.md is now modified and tracked
+  fs.writeFileSync(path.join(dir, "docs/specs/x/stories/01-hello.md"), STORY.replace("Status: ready", "Status: in-review"));
+  g("add", "-A");
+  g("commit", "-q", "-m", "story in review");
+  execFileSync(NODE, [STATE, "set", "stage=build", "--dir", path.join(dir, ".agent")]);
+  const args = ["--story", "docs/specs/x/stories/01-hello.md", "--spec", "docs/specs/x.md"];
+  ok(run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args), "init on an in-review story with a modified tracked STATE.md");
+  const r = JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8"));
+  r.step = "delivered";
+  fs.writeFileSync(path.join(dir, ".agent/run.json"), JSON.stringify(r));
+  ok(run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args), "a delivered run is replaced without --force");
+  const blocked = { ...r, step: "blocked" };
+  fs.writeFileSync(path.join(dir, ".agent/run.json"), JSON.stringify(blocked));
+  assert.equal(run(dir, "init", "--plan", "docs/specs/x/01-hello.plan.md", ...args).status, 8, "a blocked run needs abort first");
+});
+
+test("adhoc work runs with --spec none: verdicts land beside the adhoc stories; a TDD phrase in a document heading counts as live", () => {
+  const { dir, g } = project();
+  fs.mkdirSync(path.join(dir, "docs/specs/adhoc/stories"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "docs/specs/adhoc/stories/01-note.md"), STORY.replace("Spec: docs/specs/x.md", "Spec: none").replace("- README.md", "- src/"));
+  fs.writeFileSync(path.join(dir, "docs/specs/adhoc/01-note.plan.md"), `# Plan\n\n## Task 1: Document the greeting\n\n**Objective:** o\n\n**Files:**\n- create: docs/greeting.md\n\n**TDD:** Greeting contract\n\n**Verification:**\n\`\`\`sh\ngrep -q "Greeting contract" docs/greeting.md\n\`\`\`\n`);
+  g("add", "-A");
+  g("commit", "-q", "-m", "adhoc");
+  ok(run(dir, "init", "--plan", "docs/specs/adhoc/01-note.plan.md", "--story", "docs/specs/adhoc/stories/01-note.md", "--spec", "none"), "init --spec none");
+  const n = JSON.parse(run(dir, "next", "--json").stdout);
+  assert.match(fs.readFileSync(path.join(dir, n.brief), "utf8"), /## Closed decisions\n\n- none/);
+  fs.writeFileSync(path.join(dir, "docs/greeting.md"), "# Greeting contract\n\ngreet() returns hello.\n");
+  fs.writeFileSync(path.join(dir, ".agent/run/task-1-report.json"), JSON.stringify({ paths: ["docs/greeting.md"], summary: "doc" }));
+  ok(run(dir, "report", ".agent/run/task-1-report.json"), "report");
+  ok(run(dir, "controls"), "controls: a heading is a live line in a document");
+  ok(run(dir, "package"), "package");
+  const out = JSON.parse(run(dir, "next", "--json").stdout);
+  fs.writeFileSync(path.join(dir, out.verdictTo), JSON.stringify({ ruling: "PASS", rubric: [], findings: [] }));
+  assert.equal(run(dir, "verdict", out.verdictTo).status, 3);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, ".agent/run.json"), "utf8")).discards, 1, "a discarded verdict is counted");
+  fs.writeFileSync(path.join(dir, out.verdictTo), JSON.stringify(goodVerdict()));
+  ok(run(dir, "verdict", out.verdictTo), "verdict");
+  assert.ok(fs.existsSync(path.join(dir, "docs/specs/adhoc/verdicts/01-note-task-1.json")), "verdict beside the adhoc stories");
+  ok(run(dir, "commit"), "commit");
+  assert.match(g("show", "--stat", "HEAD"), /docs\/specs\/adhoc\/verdicts\/01-note-task-1\.json/);
+});
+
+test("advance: a verdict discarded four times blocks the run", () => {
+  let r = { step: "judge", task: 1, tasksTotal: 1, attempt: 1, retries: { controls: 0, judge: 0 }, notes: [] };
+  for (let i = 0; i < 3; i++) r = advance(r, "discarded");
+  assert.equal(r.step, "judge");
+  assert.equal(advance(r, "discarded").step, "blocked");
 });

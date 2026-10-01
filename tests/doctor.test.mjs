@@ -30,14 +30,37 @@ function project(adopted) {
 test("doctor reports tiers per tool from the home directory and names fixes", () => {
   const home = fakeHome();
   const d = diagnose({ project: project(false), home });
-  assert.equal(d.tiers.codex, "A", "skills in .agents plus agents in .codex is tier A");
+  assert.equal(d.tiers.codex, "A- (judge may run; separation by instruction)", "skills in .agents plus agents in .codex is tier A-, since the Codex judge keeps a shell");
   assert.equal(d.tiers.cursor, "B", "skills in .agents without cursor agents is tier B");
   assert.equal(d.tiers.claude, undefined, "a tool whose home dir is absent is not reported");
   const adopt = d.items.find((i) => /set up/.test(i.name));
   assert.equal(adopt.ok, false);
   assert.match(adopt.fix, /flow setup/);
   assert.equal(d.ok, false);
-  assert.match(report(d), /tiers\n  codex: A\n  cursor: B/);
+  assert.match(report(d), /tiers\n  codex: A- \(judge may run; separation by instruction\)\n  cursor: B/);
+});
+
+test("copilot gets an informational hooks row with no fix, and tier A when skills and agents are present", () => {
+  const home = fakeHome();
+  fs.mkdirSync(path.join(home, ".copilot/agents"), { recursive: true });
+  fs.writeFileSync(path.join(home, ".copilot/agents/flow-judge.agent.md"), "# judge\n");
+  const d = diagnose({ project: project(false), home });
+  assert.equal(d.tiers.copilot, "A (adapter experimental)");
+  const hooks = d.items.find((i) => i.name === "copilot: hooks");
+  assert.ok(hooks, "the row exists");
+  assert.equal(hooks.optional, true);
+  assert.equal(hooks.fix, null, "nothing to install");
+  assert.match(hooks.detail, /no hook adapter for Copilot yet/);
+});
+
+test("ways of working needs both branching and verify; the detail names what is unset", () => {
+  const dir = project(true);
+  fs.writeFileSync(path.join(dir, "flow.config.json"), JSON.stringify({ ship: { verify: "", branching: "trunk" } }));
+  const d = diagnose({ project: dir, home: fakeHome() });
+  const ways = d.items.find((i) => i.name.includes("ways of working"));
+  assert.equal(ways.ok, false);
+  assert.match(ways.detail, /ship\.verify unset/);
+  assert.ok(!ways.detail.includes("ship.branching"), "branching is set, so it is not listed");
 });
 
 test("an adopted project with ways of working recorded passes the project checks", () => {
@@ -47,7 +70,7 @@ test("an adopted project with ways of working recorded passes the project checks
     assert.equal(item.ok, true, `${name}: ${item.detail}`);
   }
   const ways = d.items.find((i) => i.name.includes("ways of working"));
-  assert.match(ways.detail, /branching trunk; pr checks 1; deploy push to main deploys/);
+  assert.match(ways.detail, /branching trunk; verify npm test; pr checks 1; deploy push to main deploys/);
 });
 
 import { mcpServers, resolveIntegrations } from "../skills/flow-core/scripts/doctor.mjs";
@@ -107,6 +130,16 @@ test("declared integrations are probed, ticket.source is implied, unknown ones n
     if (prevEnv === undefined) delete process.env.ACME_LEDGER_TOKEN;
     else process.env.ACME_LEDGER_TOKEN = prevEnv;
   }
+});
+
+test("a config-declared cli probe tests PATH presence only and never runs its args", () => {
+  const dir = project(true);
+  fs.writeFileSync(path.join(dir, "flow.config.json"), JSON.stringify({ ship: { verify: "npm test", branching: "trunk" }, integrations: [{ name: "vcs", kind: "cli", command: "git", args: ["rev-parse", "--definitely-not-a-flag"] }, { name: "ghost", kind: "cli", command: "flow-state-no-such-command-xyz" }] }));
+  const d = diagnose({ project: dir, home: fakeHome() });
+  const row = (n) => d.items.find((i) => i.area === "integration" && i.name.startsWith(n));
+  assert.equal(row("vcs").ok, true, "git is on PATH; the bogus args are not executed");
+  assert.equal(row("ghost").ok, false);
+  assert.deepEqual(resolveIntegrations({ integrations: [{ name: "x", kind: "cli", command: "c", args: ["a"] }] })[0].probes, [{ kind: "cli", server: undefined, command: "c", var: undefined, path: undefined, declared: true }]);
 });
 
 test("found-but-unregistered integrations are suggested when none is declared", () => {

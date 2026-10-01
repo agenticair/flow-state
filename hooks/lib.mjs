@@ -1,16 +1,14 @@
 // Shared helpers for hook scripts. Each hook reads one JSON object on stdin and writes one on stdout.
 // `--tool claude|codex|cursor` selects the output dialect; Claude and Codex share one.
+// Guards fail closed: an unreadable input, an unreadable run file or an exception denies the call and says why.
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
 export function readInput() {
-  try {
-    const raw = fs.readFileSync(0, "utf8");
-    return raw.trim() ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  const raw = fs.readFileSync(0, "utf8");
+  if (!raw.trim()) return {};
+  return JSON.parse(raw); // throws on garbage; a guard turns that into a deny
 }
 
 export function toolFromArgv(argv = process.argv.slice(2)) {
@@ -54,4 +52,37 @@ export function respond(obj) {
 export function targetPath(input) {
   const ti = input.tool_input || {};
   return ti.file_path || ti.path || ti.filePath || ti.target_file || ti.notebook_path || null;
+}
+
+// The shell command a Bash/shell tool is about to run, across dialects.
+export function commandOf(input) {
+  const ti = input.tool_input || {};
+  return String(ti.command || ti.cmd || input.command || "");
+}
+
+export function deny(reason) {
+  if (toolFromArgv() === "cursor") respond({ permission: "deny", user_message: reason, agent_message: reason });
+  else respond({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } });
+}
+
+export function allow() {
+  if (toolFromArgv() === "cursor") respond({ permission: "allow" });
+}
+
+// Run a PreToolUse guard: decide(input) returns a reason to deny or null. Any failure denies (exit 2 for Claude Code and
+// Codex, which treat it as a blocking error; a deny object for Cursor), never allows by accident.
+export function guard(decide) {
+  try {
+    const input = readInput();
+    const reason = decide(input);
+    if (reason) deny(reason);
+    else allow();
+  } catch (e) {
+    const reason = `hook could not decide (${e.message}); denied. Fix the input or the state file, or ask the human.`;
+    if (toolFromArgv() === "cursor") deny(reason);
+    else {
+      process.stderr.write(reason + "\n");
+      process.exit(2);
+    }
+  }
 }

@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 export const RULES = ["objective", "tdd-assertion", "contract", "closed-decisions", "patterns", "test-tampering", "fixture-theatre", "scope", "test-quality"];
 export const OUTCOMES = ["holds", "n-a", "no-yardstick"];
 export const SEVERITIES = ["high", "medium", "low"];
-export const HIGH_ALLOWED = ["objective", "contract", "closed-decisions", "test-tampering", "fixture-theatre"];
+export const HIGH_ALLOWED = ["objective", "contract", "closed-decisions", "test-tampering", "fixture-theatre", "scope"];
 
 export function validate(v) {
   const errors = [];
@@ -26,6 +26,9 @@ export function validate(v) {
       if (!OUTCOMES.includes(row?.outcome)) errors.push(`rubric ${row?.rule}: outcome must be one of ${OUTCOMES.join(", ")}`);
     }
     for (const r of RULES) if (!seen.has(r)) errors.push(`rubric: rule ${r} missing`);
+    if (v.ruling === "PASS" && !["objective", "tdd-assertion"].every((r) => v.rubric.some((row) => row?.rule === r && row.outcome === "holds"))) {
+      errors.push("PASS needs objective and tdd-assertion to hold");
+    }
   }
   if (!Array.isArray(v.findings)) errors.push("findings must be an array");
   else {

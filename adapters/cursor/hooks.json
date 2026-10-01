@@ -19,6 +19,12 @@
         "timeout": 5,
         "matcher": "Task|Agent",
         "failClosed": true
+      },
+      {
+        "command": "node \"${FLOW_HOOKS_DIR}/guard-push.mjs\" --tool cursor",
+        "timeout": 5,
+        "matcher": "Bash|Shell|run_shell_command",
+        "failClosed": true
       }
     ],
     "stop": [

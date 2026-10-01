@@ -6,7 +6,7 @@ It is built for the product person who today relays between a ticket, a chat win
 
 Works in Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and any tool that reads [Agent Skills](https://agentskills.io). Installs on macOS, Windows and Linux.
 
-> **Status: v0.6.0.** Every stage is installed and has run end to end on a real project. Not yet done before a public announcement: see the [ready-to-share checklist](https://github.com/agenticair/flow-state/issues/5). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
+> **Status: v0.7.0.** Every stage is installed and has run end to end on a real project; the first adversarial review (67 findings) is applied. Not yet done before a public announcement: see the [ready-to-share checklist](https://github.com/agenticair/flow-state/issues/5). Follow the [changelog](CHANGELOG.md) and the [issues](https://github.com/agenticair/flow-state/issues) for what is planned.
 
 ## Why
 
@@ -51,9 +51,9 @@ After installing, open any project and type `flow`. The first run on a machine s
 | Tool | How to type it | Install for tier A | Native review the flow invokes |
 |---|---|---|---|
 | **Claude Code** | `/flow <verb>` | `/plugin marketplace add agenticair/flow-state` then `/plugin install flow-state@flow-state`, or the full installer | `/code-review`, `/security-review` |
-| **Codex** (CLI, ChatGPT app) | `$flow <verb>` | `./install.sh --only codex` (Codex plugins cannot carry agents or hooks) | the Codex review agent |
-| **Cursor** | `/flow <verb>` in the agent pane | `./install.sh --only cursor` | Cursor's review skills |
-| **GitHub Copilot** (CLI and VS Code agent mode) | `/flow <verb>` | `./install.sh --only copilot` | Copilot code review on the pull request |
+| **Codex** (CLI, ChatGPT app) | `$flow <verb>` | `./install.sh --only codex` (Codex plugins cannot carry agents or hooks); tier A-: the judge may run, separation by instruction | the Codex review agent |
+| **Cursor** | `/flow <verb>` in the agent pane | `./install.sh --only cursor`; tier A-: the judge may run, separation by instruction | Cursor's review skills |
+| **GitHub Copilot** (CLI and VS Code agent mode) | `/flow <verb>` | `./install.sh --only copilot` (no hook adapter yet) | Copilot code review on the pull request |
 | **Gemini CLI** | `/flow <verb>` | `./install.sh --only gemini` | none yet |
 | **Antigravity, Devin, OpenCode, Amp, others** | whatever invokes a skill named `flow` | `npx skills add` (tier B) | none |
 | **ChatGPT, Claude.ai, Gemini web** | paste `adapters/web/flow-state-planning.md` into a Project, GPT or Gem with `adapters/web/INSTRUCTIONS.md` as the system prompt | not applicable (tier C: planning only) | none |
@@ -78,7 +78,7 @@ Everything is `flow <verb>`. `flow list` prints this in your tool.
 | `flow spec`, `stories`, `design`, `build`, `review`, `ship`, `retro` | that stage now |
 | `flow update` | installed vs latest; runs the update only on your yes, and never over files you edited |
 
-Three human gates: **freeze** the spec (fifteen lines, reply `freeze`), **go** on a story (you name it), **merge** the pull request (you merge or push). Nothing else has a permanent external effect: a review comment is a draft for you unless you set `review.comment: post`; approval is off unless you set `review.approve: true`; merging is never automated.
+Three human gates: **freeze** the spec (fifteen lines, reply `freeze`), **go** on a story (you name it), **merge** the pull request (reply `pr` to push the branch and open a draft pull request, which you merge on GitHub, or `push` for trunk). Nothing else has a permanent external effect: while a build is open a hook refuses every push, pull request, merge and approval; a review comment is a draft for you unless you set `review.comment: post`; approval is off unless you set `review.approve: true`; merging is never automated.
 
 ## Plug, play, learn
 
@@ -103,9 +103,9 @@ Three places hold what your company knows, and none of them is inside Flow State
 | Tool | Skills | Agent roles (builder with a shell, judge without) | Fidelity |
 |---|---|---|---|
 | Claude Code | plugin or `.claude/skills/` | `agents/*.md` | A |
-| Codex (CLI, ChatGPT app) | `.agents/skills/` | `.codex/agents/*.toml` via the installer (Codex plugins cannot carry agents) | A |
-| Cursor | `.agents/skills/` | `.cursor/agents/*.md`, judge marked `readonly` | A |
-| GitHub Copilot CLI | `.agents/skills/` | `.github/agents/*.agent.md` | A (adapter experimental) |
+| Codex (CLI, ChatGPT app) | `.agents/skills/` | `.codex/agents/*.toml` via the installer (Codex plugins cannot carry agents) | A- (judge may run; separation by instruction) |
+| Cursor | `.agents/skills/` | `.cursor/agents/*.md`, judge marked `readonly` | A- (judge may run; separation by instruction) |
+| GitHub Copilot CLI | `.agents/skills/` | `.github/agents/*.agent.md`; hooks: no hook adapter yet | A (adapter experimental) |
 | Gemini CLI | `.agents/skills/` | `.gemini/agents/*.md` (Gemini subagents are experimental) | A (adapter experimental) |
 | Antigravity (`.agent/skills/`), Devin, OpenCode, Amp, others | `.agents/skills/` via `npx skills add` | roles run by instruction in the main session | B |
 | ChatGPT, Claude.ai, Gemini web | `adapters/web/flow-state-planning.md` plus `INSTRUCTIONS.md` | none | C |

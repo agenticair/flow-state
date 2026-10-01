@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // `flow update`: installed version vs the latest in update.source, with a safety check that never clobbers a customised copy.
-//   node update.mjs check [--project <dir>] [--json]   installed, latest (cached 24h), route, edited files
+//   node update.mjs check [--project <dir>] [--json] [--force]   installed, latest (cached 24h), route, edited files; --force checks even under update.policy never (an explicit flow update)
 //   node update.mjs run --yes [--project <dir>]        runs the route only when nothing is edited and no build run is open
 // Exit: 0 ok / up to date, 1 update available (check) or refused (run), 2 usage, 3 could not check.
 import fs from "node:fs";
@@ -82,7 +82,7 @@ export async function check(project, opts = {}) {
   const installed = installedVersion();
   const policy = cfg.update?.policy || "ask";
   const source = cfg.update?.source || "agenticair/flow-state";
-  const l = policy === "never" ? { version: null, skipped: true } : await latest(source, opts);
+  const l = policy === "never" && !opts.force ? { version: null, skipped: true } : await latest(source, opts);
   const edits = editedFiles();
   const r = route();
   const available = l.version && installed !== "unknown" ? compare(installed, l.version) < 0 : null;
@@ -96,7 +96,7 @@ function main(argv) {
   };
   const project = path.resolve(get("--project", "."));
   const verb = argv.find((a) => !a.startsWith("--") && !["--project"].includes(argv[argv.indexOf(a) - 1]));
-  return check(project).then((c) => {
+  return check(project, { force: argv.includes("--force") }).then((c) => {
     if (verb === "check" || !verb) {
       if (argv.includes("--json")) console.log(JSON.stringify(c, null, 2));
       else {
@@ -125,7 +125,7 @@ function main(argv) {
 }
 
 function usage() {
-  console.error("usage: update.mjs check [--json] | run --yes   [--project <dir>]");
+  console.error("usage: update.mjs check [--json] [--force] | run --yes   [--project <dir>]");
   return 2;
 }
 

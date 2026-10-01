@@ -4,6 +4,33 @@ All notable changes to Flow State. Format: [Keep a Changelog](https://keepachang
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-01
+
+Hardening release from the first full adversarial review (nine reviewers, 67 confirmed findings, each re-verified against the files). The three gates and the writer/judge separation now have a program behind them where before they had prose.
+
+### Added
+- `hooks/guard-push.mjs`: while a build run is open, `git push`, `gh pr create|merge|ready`, `gh pr review --approve`, `gh api` writes and `gh release create` are denied (Claude Code, Codex, Cursor); a delivered run does not block `flow ship`.
+- Hooks fail closed: garbage input, an unreadable `run.json` or an exception denies the call (exit 2 for Claude Code and Codex, a deny object for Cursor); session hydration never blocks.
+- `step.mjs init` refuses a story that is not `Status: ready` or `in-review` (the go gate; a patch plan after review), a plan whose Files touch a story's Protected path, and a modified or staged working tree; it prints every Verification command it will run; it hashes the plan and every untracked file already present, and every later verb refuses when the plan, the tasks in `run.json` or an unreported pre-existing file changed.
+- `step.mjs`: the verdict path is fresh per attempt and a stale verdict is removed before the judge is dispatched; a commit whose tree a repository hook rewrote is undone and re-packaged; a commit that landed before `run.json` was written is recovered; an empty diff at package counts like red controls; the correction-budget note is printed with its findings; the package carries the builder's report as testimony; quoted material (repository rules, project notes, Context) is framed as data in briefs and packages; verification predicates time out (`FLOW_VERIFICATION_TIMEOUT_MS`, default 600 s); a skipped, todo-ed or commented-out TDD test fails the control; `abort --yes` unstages; `--spec none` for adhoc (S-route) work; a verdict discarded three times blocks the run; init refuses to run outside the repository root.
+- `spec.mjs freeze` requires `--yes` after the human's word and stamps `Frozen by:`; the freeze summary shows each decision's provenance and the Context count; `said` without a quote and (who, date), `deduced` without a source, an unreadable ticket, an empty failure signal or Measure now block the freeze.
+- `verdict.mjs`: a PASS needs `objective` and `tdd-assertion` to hold; `scope` may be high.
+- `state.mjs`: `reviewed_commit`, written when a review closes and checked by `flow ship`.
+- `config.mjs`: team-owned keys (`review.comment`, `review.approve`, `ship.verify`, `ship.smoke`, `retro.apply`) never reach the merged config from the machine file; the welcome's answers are the defaults `flow setup` proposes (`where --json` → `machineDefaults`).
+- `rules.mjs`: inline `@imports`, `rules.maxBytes` honoured, overflow names what was not pasted, headings demoted, paths outside the project, non-markdown and `.env*` skipped and named.
+- `harvest.mjs`: verdicts read from HEAD, trailers matched by full story name, skipped files listed.
+- `doctor.mjs`: a declared `cli` integration is tested for presence only; Copilot gets an informational hooks row (no hook adapter yet, nothing to install); Codex and Cursor are tier A- (judge may run; separation by instruction); ways of working need `ship.verify` too.
+- `update.mjs check --force` for an explicit `flow update` under `update.policy: never`.
+- Tests: 93 (was 68); new `tests/rules.test.mjs`, `tests/verdict.test.mjs`.
+
+### Changed
+- `flow ship`: the pull request is part of the gate. Ship prepares the body and stops with "Reply `pr` to push the branch and open a draft pull request (you merge it on GitHub), or `push` for trunk"; `--draft` follows `ship.pr.draft`; `flow connect --only github` runs first; an empty verify, deploy or branch pattern stops like a Pending way of working; the S route ends at `stage: idle`.
+- `flow review`: high and medium findings route only to patch or spec gap; comment and approve happen after the patch tasks landed; the stage commits its own bookkeeping and records `reviewed_commit`.
+- `flow retro`: flow-level issues go to `update.source` with the numbers and the lesson only, one yes per issue; `retro.apply: auto` touches pitfall lines and lens triggers only.
+- Hub: `flow run` is suggested under `assisted`; the architect runs for every new ask and its questions are asked in every mode; stage verbs size first.
+- `flow setup`: branch protection also read from rulesets, unknown becomes a question; discovery runs lint, typecheck and unit tests only; branching options named by what they do.
+- `flow spec`, `flow stories`, `flow build`: `assisted` is run mode; a story that is not ready cannot start a build; reviewer findings about sources, quotes or layer splits are not rejectable.
+
 ## [0.6.0] - 2026-10-01
 
 ### Added

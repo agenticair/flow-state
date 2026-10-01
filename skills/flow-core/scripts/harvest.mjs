@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Harvests a spec's build evidence from what is committed: verdict files, git trailers, story statuses.
-// Nothing is typed by hand; a number that is not here is not in the retro.
+// Harvests a spec's build evidence from what is committed: verdict files at HEAD, git trailers, story statuses.
+// Nothing is typed by hand; a number that is not here is not in the retro. Verdicts that are not valid JSON are skipped and named.
 // Usage: node harvest.mjs --spec <spec.md> [--project <dir>] [--json]
 // Exit: 0 ok, 2 usage, 3 spec or folder missing.
 import fs from "node:fs";
@@ -33,39 +33,45 @@ export function harvest(project, specFile) {
       story(id).name = f.replace(/\.md$/, "");
     }
   }
-  if (fs.existsSync(vdir)) {
-    for (const f of fs.readdirSync(vdir).filter((f) => f.endsWith(".json")).sort()) {
-      const meta = parseVerdictName(f);
-      if (!meta) continue;
-      let v;
-      try {
-        v = JSON.parse(fs.readFileSync(path.join(vdir, f), "utf8"));
-      } catch {
-        continue;
-      }
-      const s = story(meta.story);
-      s.tasks.add(`${meta.plan}#${meta.task}`);
-      s.attempts += 1;
-      if (meta.attempt > 1) s.corrections += 1;
-      if (meta.patch) s.patches.add(meta.plan);
-      if (v.ruling === "PASS") s.pass += 1;
-      else s.fail += 1;
-      for (const fnd of v.findings || []) {
-        if (fnd.severity in s.findings) s.findings[fnd.severity] += 1;
-        s.byRule[fnd.rule] = (s.byRule[fnd.rule] || 0) + 1;
-      }
-      for (const row of v.rubric || []) if (row.outcome in s.rubric) s.rubric[row.outcome] += 1;
+  const git = (...a) => execFileSync("git", a, { cwd: project, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const skipped = [];
+  let committed = [];
+  try {
+    committed = git("ls-tree", "-r", "--name-only", "HEAD", "--", path.relative(project, vdir).split(path.sep).join("/")).split("\n").filter((f) => f.endsWith(".json")).sort();
+  } catch {}
+  for (const f of committed) {
+    const meta = parseVerdictName(path.basename(f));
+    if (!meta) continue;
+    let v;
+    try {
+      v = JSON.parse(git("show", `HEAD:./${f}`));
+    } catch (e) {
+      skipped.push({ file: f, reason: e.message.split("\n")[0] });
+      continue;
     }
+    const s = story(meta.story);
+    s.tasks.add(`${meta.plan}#${meta.task}`);
+    s.attempts += 1;
+    if (meta.attempt > 1) s.corrections += 1;
+    if (meta.patch) s.patches.add(meta.plan);
+    if (v.ruling === "PASS") s.pass += 1;
+    else s.fail += 1;
+    for (const fnd of v.findings || []) {
+      if (fnd.severity in s.findings) s.findings[fnd.severity] += 1;
+      s.byRule[fnd.rule] = (s.byRule[fnd.rule] || 0) + 1;
+    }
+    for (const row of v.rubric || []) if (row.outcome in s.rubric) s.rubric[row.outcome] += 1;
   }
   let log = "";
   try {
     log = execFileSync("git", ["log", "--format=%H%x09%cI%x09%s%x09%(trailers:key=Flow-State,valueonly)"], { cwd: project, encoding: "utf8" });
   } catch {}
+  const byName = Object.fromEntries(Object.values(stories).filter((s) => s.name).map((s) => [s.name, s.id]));
   for (const line of log.split("\n").filter(Boolean)) {
     const [sha, date, subject, trailer] = line.split("\t");
-    const m = /^(\d+)[^#]*#(\d+)/.exec(trailer || "");
-    if (!m) continue;
-    const s = story(m[1]);
+    const m = /^([^#\s]+)#\d+/.exec(trailer || "");
+    if (!m || !(m[1] in byName)) continue; // trailers of other specs' stories are not this spec's evidence
+    const s = story(byName[m[1]]);
     s.commits.push({ sha: sha.slice(0, 7), date, subject });
     if (!s.last) s.last = date;
     s.first = date;
@@ -85,7 +91,7 @@ export function harvest(project, specFile) {
     }),
     { stories: 0, done: 0, tasks: 0, attempts: 0, corrections: 0, pass: 0, fail: 0, high: 0, medium: 0, low: 0, commits: 0, patches: 0 },
   );
-  return { spec: specFile, stories: rows, total };
+  return { spec: specFile, stories: rows, total, skipped };
 }
 
 export function table(h) {
@@ -98,6 +104,7 @@ export function table(h) {
   const rules = {};
   for (const s of h.stories) for (const [r, n] of Object.entries(s.byRule)) rules[r] = (rules[r] || 0) + n;
   if (Object.keys(rules).length) lines.push("", "Findings by rule: " + Object.entries(rules).sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r} ${n}`).join(", "));
+  if (h.skipped?.length) lines.push("", ...h.skipped.map((s) => `skipped: ${s.file} (${s.reason})`));
   return lines.join("\n");
 }
 

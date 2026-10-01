@@ -32,6 +32,16 @@
           }
         ],
         "matcher": "Task|Agent"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${FLOW_HOOKS_DIR}/guard-push.mjs\" --tool codex",
+            "timeout": 5
+          }
+        ],
+        "matcher": "Bash|Shell|run_shell_command"
       }
     ],
     "Stop": [

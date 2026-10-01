@@ -18,7 +18,7 @@ Ticket: <url, key, or none>
 
 | # | Decision | Provenance |
 |---|---|---|
-| D-1 | <decision> | said: "<quote>" |
+| D-1 | <decision> | said: "<quote>" (<who>, <YYYY-MM-DD>) |
 | D-2 | <decision> | deduced: from D-1 and `<path:line>` |
 
 ## Context for the builder

@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE = path.join(here, "..", "templates", "STATE.md");
 
-export const KEYS = ["feature", "size", "stage", "gate", "spec", "last_commit", "blocked", "updated"];
+export const KEYS = ["feature", "size", "stage", "gate", "spec", "last_commit", "reviewed_commit", "blocked", "updated"];
 export const SIZES = ["none", "S", "M", "L", "XL"];
 export const STAGES = ["idle", "spec", "stories", "design", "build", "review", "ship", "retro"];
 export const GATES = ["none", "freeze", "go", "merge"];
